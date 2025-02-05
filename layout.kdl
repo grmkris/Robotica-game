@@ -1,0 +1,44 @@
+layout {
+    tab name="Infrastructure" {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        pane split_direction="vertical" {
+            pane {
+                command "pnpm"
+                args "run" "infra:dev"
+            }
+            pane {
+                command "pnpm"
+                args "db:studio"
+            }
+        }
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+    tab name="API" {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        pane {
+            command "pnpm"
+            args "dev:api"
+        }
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+    tab name="Frontend" {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        pane {
+            command "pnpm"
+            args "dev:front"
+        }
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+}

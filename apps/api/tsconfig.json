@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "noErrorTruncation": true,
+    // Enable latest features
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    // Change moduleResolution to Node
+    "moduleResolution": "Node",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Add these options
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true
+  },
+  "include": [
+    "src",
+    "test",
+    "scripts",
+    "drizzle.config.ts",
+    "src/routes/catAgent/prompts"
+  ],
+  "exclude": ["node_modules", "**/**/node_modules/**/**"]
+}

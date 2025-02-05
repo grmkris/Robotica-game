@@ -1,0 +1,9 @@
+.gitignore
+node_modules
+dev.sh
+docker-compose.yml
+layout.kdl
+railway.json
+readme.md
+.vscode
+.idea

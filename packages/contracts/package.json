@@ -1,0 +1,37 @@
+{
+  "name": "cat-contracts",
+  "description": "Foundry-based template for developing Solidity smart contracts",
+  "version": "1.0.0",
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.2.0",
+    "@prb/math": "4.0.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/bun": "^1.2.1",
+    "bun": "^1.2.1",
+    "forge-std": "github:foundry-rs/forge-std#v1.8.1",
+    "solhint": "^5.0.5"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "forge",
+    "foundry",
+    "smart-contracts",
+    "solidity",
+    "template"
+  ],
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf cache out",
+    "build": "forge build",
+    "lint": "bun run lint:sol",
+    "lint:sol": "forge fmt --check && bun solhint \"{script,src,test}/**/*.sol\"",
+    "format:sol": "forge fmt",
+    "format": "pnpm biome format --write src test script lib",
+    "test": "forge test",
+    "test:coverage": "forge coverage",
+    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage"
+  }
+}

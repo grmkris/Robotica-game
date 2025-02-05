@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Cache and logs
+.cache/
+*.log
+
+# Environment and local files
+.env
+.env.*
+.local
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Other common ignore patterns
+coverage/
+.DS_Store 

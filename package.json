@@ -1,0 +1,43 @@
+{
+  "name": "misha-ai",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "bun test",
+    "infra:dev": "cd infra && docker compose up -d && docker compose logs -f",
+    "infra:down": "cd infra && docker compose down",
+    "infra:logs": "cd infra && docker compose logs -f",
+    "infra:clean": "cd infra && docker compose -f docker-compose.yml down -v --remove-orphans && docker volume prune -f",
+    "dev": "./dev.sh",
+    "dev:api": "pnpm --filter=misha-api run dev",
+    "dev:front": "pnpm --filter=misha-front run dev",
+    "dev:docs": "pnpm --filter=misha-docs run dev",
+    "db:studio": "pnpm --filter=misha-api run db:studio",
+    "format": "pnpm -r run format",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "front:build": "pnpm --filter=misha-front run build",
+    "front:start": "pnpm --filter=misha-front run start",
+    "docs:build": "pnpm --filter=misha-docs run build",
+    "docs:start": "pnpm --filter=misha-docs run start"
+  },
+  "resolutions": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.1"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "pnpm@9.15.4",
+  "devDependencies": {
+    "@types/bun": "^1.2.1",
+    "bun": "^1.2.1",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

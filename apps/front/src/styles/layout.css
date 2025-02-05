@@ -1,0 +1,48 @@
+:root {
+  --app-height: 100%;
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --app-height: -webkit-fill-available;
+  }
+}
+
+html {
+  height: var(--app-height);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  height: var(--app-height);
+  overflow: hidden;
+  overscroll-behavior: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-image: url('/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#main-content {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 1;
+}
+
+.mobile-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+} 

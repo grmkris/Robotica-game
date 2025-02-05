@@ -1,0 +1,21 @@
+{
+  "name": "cat-media-gen",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.2.3",
+    "cat-logger": "workspace:*",
+    "cat-storage": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.1",
+    "@types/node": "^22.12.0",
+    "bun": "^1.2.1",
+    "typescript": "^5.7.3"
+  }
+}
