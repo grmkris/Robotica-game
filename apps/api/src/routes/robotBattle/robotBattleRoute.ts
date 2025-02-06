@@ -272,12 +272,16 @@ async function simulateBattle(
       where: eq(RobotTable.id, robot2Id as `rob_${string}`),
     });
 
+    logger.info("Found robots for battle:", { robot1, robot2 });
+
     if (!robot1 || !robot2) {
-      throw new Error("One or both robots not found");
+      throw new Error(`One or both robots not found: ${robot1Id}, ${robot2Id}`);
     }
 
     // Simulate 3 rounds
     for (let roundNumber = 1; roundNumber <= 3; roundNumber++) {
+      logger.info(`Starting round ${roundNumber}`);
+
       const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
@@ -312,20 +316,29 @@ async function simulateBattle(
         throw new Error("Failed to generate round results");
       }
 
-      const roundResult = JSON.parse(content);
-      const roundWinnerId =
-        roundResult.winner === "robot1" ? robot1Id : robot2Id;
+      logger.info(`Round ${roundNumber} OpenAI response:`, content);
 
-      await db.insert(BattleRoundsTable).values({
-        id: generateId("round"),
-        battleId,
-        roundNumber,
-        description: roundResult.description,
-        tacticalAnalysis: roundResult.tacticalAnalysis,
-        robot1Action: `${robot1.name} engages in battle`,
-        robot2Action: `${robot2.name} engages in battle`,
-        roundWinnerId,
-      });
+      try {
+        const roundResult = JSON.parse(content);
+        logger.info(`Round ${roundNumber} parsed result:`, roundResult);
+
+        const roundWinnerId =
+          roundResult.winner === "robot1" ? robot1Id : robot2Id;
+
+        await db.insert(BattleRoundsTable).values({
+          id: generateId("round"),
+          battleId,
+          roundNumber,
+          description: roundResult.description,
+          tacticalAnalysis: roundResult.tacticalAnalysis,
+          robot1Action: `${robot1.name} engages in battle`,
+          robot2Action: `${robot2.name} engages in battle`,
+          roundWinnerId,
+        });
+      } catch (parseError) {
+        logger.error("Failed to parse round result:", parseError, content);
+        throw parseError;
+      }
     }
 
     // Determine overall winner
@@ -355,7 +368,14 @@ async function simulateBattle(
     // Update user battle stats
     await updateUserBattleStats(db, robot1, robot2, winnerId);
   } catch (error) {
-    logger.error("Battle simulation failed", { error, battleId });
+    logger.error("Battle simulation failed", {
+      error,
+      battleId,
+      robot1Id,
+      robot2Id,
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     await db
       .update(BattleTable)
       .set({ status: "CANCELLED" })
