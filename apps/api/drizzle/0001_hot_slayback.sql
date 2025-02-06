@@ -1,1 +1,0 @@
-ALTER TABLE "cat_interactions" ADD COLUMN "thinking_process" text;

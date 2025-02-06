@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     ports:
-      - "54321:5432"
+      - "55321:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -31,4 +31,4 @@ services:
 
 volumes:
   postgres_data:
-  redis_data: 
+  redis_data:

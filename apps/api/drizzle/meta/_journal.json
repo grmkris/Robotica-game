@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1738150220857,
-      "tag": "0000_slow_sentinel",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1738185372280,
-      "tag": "0001_hot_slayback",
+      "when": 1738774812630,
+      "tag": "0000_mixed_grandmaster",
       "breakpoints": true
     }
   ]
