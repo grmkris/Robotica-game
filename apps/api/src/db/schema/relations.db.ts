@@ -20,6 +20,7 @@ export const robotRelations = relations(RobotTable, ({ many, one }) => ({
   battlesAsRobot1: many(BattleTable, { relationName: "robot1Battles" }),
   battlesAsRobot2: many(BattleTable, { relationName: "robot2Battles" }),
   wonBattles: many(BattleTable, { relationName: "battleWinner" }),
+  wonRounds: many(BattleRoundsTable, { relationName: "roundWinner" }),
   creator: one(users, {
     fields: [RobotTable.createdBy],
     references: [users.id],
@@ -55,6 +56,7 @@ export const battleRoundsRelations = relations(
     roundWinner: one(RobotTable, {
       fields: [BattleRoundsTable.roundWinnerId],
       references: [RobotTable.id],
+      relationName: "roundWinner",
     }),
   })
 );

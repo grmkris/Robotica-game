@@ -7,21 +7,18 @@ import {
 import { validateUser } from "@/routes/helpers";
 import type { ContextVariables } from "@/types";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import {
-  ROBOT_CLASSES,
-  BATTLE_STATUS,
-  generateId,
-} from "@/types/robotBattle.types";
+import { BATTLE_STATUS, generateId } from "@/types/robotBattle.types";
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { OpenAI } from "openai";
 import { env } from "@/env";
 import { sql } from "drizzle-orm";
+import type { BattleRound } from "@/types/robotBattle.types";
 
 // Define Zod schemas for validation
-const RobotIdSchema = z.string().regex(/^rob_/);
-const BattleIdSchema = z.string().regex(/^bat_/);
-const RoundIdSchema = z.string().regex(/^rnd_/);
+const RobotIdSchema = z.string().regex(/^rob_[a-zA-Z0-9]+$/);
+const BattleIdSchema = z.string().regex(/^bat_[a-zA-Z0-9]+$/);
+const RoundIdSchema = z.string().regex(/^rnd_[a-zA-Z0-9]+$/);
 
 // Create Robot Route
 export const createRobotRoute = new OpenAPIHono<{
@@ -49,12 +46,10 @@ export const createRobotRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              id: z.string(),
+              id: RobotIdSchema,
               name: z.string(),
-              class: z.enum(ROBOT_CLASSES),
-              power: z.number(),
-              defense: z.number(),
-              speed: z.number(),
+              description: z.string(),
+              prompt: z.string(),
             }),
           },
         },
@@ -77,14 +72,13 @@ export const createRobotRoute = new OpenAPIHono<{
         messages: [
           {
             role: "system",
-            content: `You are a robot factory. Generate a robot based on the user's prompt. 
-                     Return a JSON object with these fields:
-                     - name: string (creative name for the robot)
-                     - class: one of [${ROBOT_CLASSES.join(", ")}]
-                     - power: number (1-100)
-                     - defense: number (1-100)
-                     - speed: number (1-100)
-                     - description: string (brief description)`,
+            content: `You are a robot designer. Create a unique and creative robot based on the user's prompt.
+                     Focus on describing its unique characteristics, abilities, strengths, and potential weaknesses.
+                     Return a JSON object with:
+                     {
+                       "name": "Creative robot name",
+                       "description": "Detailed description of the robot's capabilities, design, and tactical considerations"
+                     }`,
           },
           {
             role: "user",
@@ -101,21 +95,15 @@ export const createRobotRoute = new OpenAPIHono<{
       logger.info("OpenAI response:", content);
 
       const robotData = JSON.parse(content);
-
-      // Generate a unique robot ID with the correct type
-      const robotId = generateId("robot");
+      const robotId = generateId("robot") as `rob_${string}`;
 
       const [robot] = await db
         .insert(RobotTable)
         .values({
           id: robotId,
           name: robotData.name,
-          class: robotData.class,
-          power: robotData.power,
-          defense: robotData.defense,
-          speed: robotData.speed,
           description: robotData.description,
-          prompt: prompt,
+          prompt,
           createdBy: user.id,
           createdAt: new Date(),
         })
@@ -176,10 +164,10 @@ export const startBattleRoute = new OpenAPIHono<{
     try {
       // Validate that both robots exist
       const robot1 = await db.query.RobotTable.findFirst({
-        where: eq(RobotTable.id, robot1Id as `rob${string}`),
+        where: eq(RobotTable.id, robot1Id as `rob_${string}`),
       });
       const robot2 = await db.query.RobotTable.findFirst({
-        where: eq(RobotTable.id, robot2Id as `rob${string}`),
+        where: eq(RobotTable.id, robot2Id as `rob_${string}`),
       });
 
       if (!robot1 || !robot2) {
@@ -188,12 +176,14 @@ export const startBattleRoute = new OpenAPIHono<{
         });
       }
 
+      const battleId = generateId("battle") as `bat_${string}`;
+
       const [battle] = await db
         .insert(BattleTable)
         .values({
-          id: generateId("battle"),
-          robot1Id: robot1Id as `rob${string}`,
-          robot2Id: robot2Id as `rob${string}`,
+          id: battleId,
+          robot1Id: robot1Id as `rob_${string}`,
+          robot2Id: robot2Id as `rob_${string}`,
           status: "IN_PROGRESS",
         })
         .returning();
@@ -250,7 +240,7 @@ export const getBattleStatusRoute = new OpenAPIHono<{
     const db = c.get("db");
 
     const battle = await db.query.BattleTable.findFirst({
-      where: eq(BattleTable.id, battleId as `bat${string}`),
+      where: eq(BattleTable.id, battleId as `bat_${string}`),
       with: {
         rounds: true,
       },
@@ -264,17 +254,6 @@ export const getBattleStatusRoute = new OpenAPIHono<{
   }
 );
 
-// Add type for BattleRound
-type BattleRound = {
-  id: string;
-  battleId: string;
-  roundNumber: number;
-  description: string;
-  robot1Action: string;
-  robot2Action: string;
-  roundWinnerId: string;
-};
-
 // Add new helper function for battle simulation
 async function simulateBattle(
   battleId: string,
@@ -286,12 +265,11 @@ async function simulateBattle(
   try {
     const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-    // Get robot details with proper type assertions
     const robot1 = await db.query.RobotTable.findFirst({
-      where: eq(RobotTable.id, robot1Id as `rob${string}`),
+      where: eq(RobotTable.id, robot1Id as `rob_${string}`),
     });
     const robot2 = await db.query.RobotTable.findFirst({
-      where: eq(RobotTable.id, robot2Id as `rob${string}`),
+      where: eq(RobotTable.id, robot2Id as `rob_${string}`),
     });
 
     if (!robot1 || !robot2) {
@@ -300,58 +278,71 @@ async function simulateBattle(
 
     // Simulate 3 rounds
     for (let roundNumber = 1; roundNumber <= 3; roundNumber++) {
-      // Generate round narrative using LLM
       const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content:
-              "You are a robot battle announcer. Generate an exciting description of this battle round.",
+            content: `You are an expert battle analyst and referee. Analyze this robot battle round considering:
+              - Each robot's unique characteristics and abilities
+              - Tactical advantages and disadvantages
+              - Creative use of abilities and environment
+              - Potential countermeasures and adaptations
+              
+              Return a JSON object with:
+              {
+                "description": "Detailed and exciting battle narrative",
+                "winner": "robot1 or robot2",
+                "tacticalAnalysis": "Expert analysis of why this robot won the round"
+              }`,
           },
           {
             role: "user",
-            content: `Round ${roundNumber}: ${robot1.name} (${robot1.class}) vs ${robot2.name} (${robot2.class})`,
+            content: `Round ${roundNumber}:
+              Robot 1: "${robot1.name}" - ${robot1.description}
+              Robot 2: "${robot2.name}" - ${robot2.description}
+              
+              Analyze their capabilities and narrate this battle round.`,
           },
         ],
       });
 
       const content = completion.choices[0].message.content;
       if (!content) {
-        throw new Error("Failed to generate round description");
+        throw new Error("Failed to generate round results");
       }
 
-      const roundDescription = content;
+      const roundResult = JSON.parse(content);
+      const roundWinnerId =
+        roundResult.winner === "robot1" ? robot1Id : robot2Id;
 
-      // Determine round winner based on stats and random chance
-      const roundWinnerId = determineRoundWinner(robot1, robot2);
-
-      // Save round
       await db.insert(BattleRoundsTable).values({
         id: generateId("round"),
         battleId,
         roundNumber,
-        description: roundDescription,
-        robot1Action: `${robot1.name} uses their ${robot1.class} abilities`,
-        robot2Action: `${robot2.name} uses their ${robot2.class} abilities`,
+        description: roundResult.description,
+        tacticalAnalysis: roundResult.tacticalAnalysis,
+        robot1Action: `${robot1.name} engages in battle`,
+        robot2Action: `${robot2.name} engages in battle`,
         roundWinnerId,
       });
     }
 
-    // Determine battle winner
+    // Determine overall winner
     const rounds = await db.query.BattleRoundsTable.findMany({
-      where: eq(BattleRoundsTable.battleId, battleId as `bat${string}`),
+      where: eq(BattleRoundsTable.battleId, battleId as `bat_${string}`),
     });
 
     const robot1Wins = rounds.filter(
       (r: BattleRound) => r.roundWinnerId === robot1Id
     ).length;
+
     const robot2Wins = rounds.filter(
       (r: BattleRound) => r.roundWinnerId === robot2Id
     ).length;
+
     const winnerId = robot1Wins > robot2Wins ? robot1Id : robot2Id;
 
-    // Update battle status
     await db
       .update(BattleTable)
       .set({
@@ -359,7 +350,7 @@ async function simulateBattle(
         winnerId,
         completedAt: new Date(),
       })
-      .where(eq(BattleTable.id, battleId as `bat${string}`));
+      .where(eq(BattleTable.id, battleId as `bat_${string}`));
 
     // Update user battle stats
     await updateUserBattleStats(db, robot1, robot2, winnerId);
@@ -368,26 +359,8 @@ async function simulateBattle(
     await db
       .update(BattleTable)
       .set({ status: "CANCELLED" })
-      .where(eq(BattleTable.id, battleId as `bat${string}`));
+      .where(eq(BattleTable.id, battleId as `bat_${string}`));
   }
-}
-
-// Helper function to determine round winner
-function determineRoundWinner(robot1: any, robot2: any) {
-  // Calculate battle scores based on stats and random factor
-  const robot1Score =
-    robot1.power * 0.4 +
-    robot1.defense * 0.3 +
-    robot1.speed * 0.3 +
-    Math.random() * 20;
-
-  const robot2Score =
-    robot2.power * 0.4 +
-    robot2.defense * 0.3 +
-    robot2.speed * 0.3 +
-    Math.random() * 20;
-
-  return robot1Score > robot2Score ? robot1.id : robot2.id;
 }
 
 // Helper function to update user battle stats

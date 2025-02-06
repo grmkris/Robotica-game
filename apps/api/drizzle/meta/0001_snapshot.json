@@ -1,6 +1,6 @@
 {
-  "id": "d2fb4ae2-2218-4745-b068-250e221366d5",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "79bc5186-2443-4856-9c8a-f112629d8988",
+  "prevId": "d2fb4ae2-2218-4745-b068-250e221366d5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -724,7 +724,34 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "battles_robot1_id_robots_id_fk": {
+          "name": "battles_robot1_id_robots_id_fk",
+          "tableFrom": "battles",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "robot1_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battles_robot2_id_robots_id_fk": {
+          "name": "battles_robot2_id_robots_id_fk",
+          "tableFrom": "battles",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "robot2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -743,7 +770,7 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
@@ -767,7 +794,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"

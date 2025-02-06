@@ -99,7 +99,7 @@ export const ITEM_TYPES = ["TOY", "FOOD", "FURNITURE"] as const;
 export const ItemType = z.enum(ITEM_TYPES);
 export type ItemType = z.infer<typeof ItemType>;
 
-export const itemTypeEnum = pgEnum("item_type", ITEM_TYPES);
+export const itemTypeEnum = pgEnum("item_type", ["CONSUMABLE", "EQUIPMENT"]);
 
 // Add new tables
 export const items = pgTable("items", {
