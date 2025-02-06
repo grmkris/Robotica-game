@@ -31,13 +31,13 @@ export const createRobotRoute = new OpenAPIHono<{
     method: "post",
     path: "create-robot",
     tags: ["RobotBattle"],
-    summary: "Create a new robot from user prompt",
+    summary: "Create a new robot from prompt",
     request: {
       body: {
         content: {
           "application/json": {
             schema: z.object({
-              prompt: z.string(),
+              prompt: z.string().min(1),
             }),
           },
         },
@@ -45,11 +45,16 @@ export const createRobotRoute = new OpenAPIHono<{
     },
     responses: {
       200: {
-        description: "Success",
+        description: "Robot created successfully",
         content: {
           "application/json": {
             schema: z.object({
-              robotId: RobotIdSchema,
+              id: z.string(),
+              name: z.string(),
+              class: z.enum(ROBOT_CLASSES),
+              power: z.number(),
+              defense: z.number(),
+              speed: z.number(),
             }),
           },
         },
@@ -63,17 +68,23 @@ export const createRobotRoute = new OpenAPIHono<{
     const logger = c.get("logger");
 
     try {
-      // Initialize OpenAI
+      logger.info("Creating robot with prompt:", prompt);
+
       const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-      // Process prompt with LLM to generate robot characteristics
       const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content:
-              "You are a robot battle game master. Generate robot characteristics based on the user's prompt. Include name, class (ASSAULT/DEFENSE/SUPPORT/STEALTH/HEAVY), description, and stats (power: 1-100, defense: 1-100, speed: 1-100).",
+            content: `You are a robot factory. Generate a robot based on the user's prompt. 
+                     Return a JSON object with these fields:
+                     - name: string (creative name for the robot)
+                     - class: one of [${ROBOT_CLASSES.join(", ")}]
+                     - power: number (1-100)
+                     - defense: number (1-100)
+                     - speed: number (1-100)
+                     - description: string (brief description)`,
           },
           {
             role: "user",
@@ -84,27 +95,40 @@ export const createRobotRoute = new OpenAPIHono<{
 
       const content = completion.choices[0].message.content;
       if (!content) {
-        throw new HTTPException(500, {
-          message: "Failed to generate robot characteristics",
-        });
+        throw new Error("Failed to generate robot characteristics");
       }
 
-      // Parse LLM response
-      const robotStats = JSON.parse(content);
+      logger.info("OpenAI response:", content);
+
+      const robotData = JSON.parse(content);
+
+      // Generate a unique robot ID with the correct type
+      const robotId = generateId("robot");
 
       const [robot] = await db
         .insert(RobotTable)
         .values({
-          id: generateId("robot"),
-          prompt,
+          id: robotId,
+          name: robotData.name,
+          class: robotData.class,
+          power: robotData.power,
+          defense: robotData.defense,
+          speed: robotData.speed,
+          description: robotData.description,
+          prompt: prompt,
           createdBy: user.id,
-          ...robotStats,
+          createdAt: new Date(),
         })
         .returning();
 
-      return c.json({ robotId: robot.id });
+      logger.info("Created robot:", robot);
+
+      return c.json(robot);
     } catch (error) {
-      logger.error("Failed to create robot", { error });
+      logger.error("Failed to create robot:", error);
+      if (error instanceof Error) {
+        throw new HTTPException(500, { message: error.message });
+      }
       throw new HTTPException(500, { message: "Failed to create robot" });
     }
   }
