@@ -1,13 +1,12 @@
-import { CatComponent } from "@/app/_lib/catLib/CatComponent";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { CreateRobot } from "./_lib/robotLib/components/CreateRobot";
 
-export default async function Page() {
+export default function Page() {
   return (
-    <div className="relative h-full">
-      <div className="absolute right-4 top-4 z-10">
-        <ThemeToggle />
-      </div>
-      <CatComponent />
-    </div>
+    <main className="container mx-auto px-4 py-8">
+      <h1 className="mb-8 text-center text-4xl font-bold">
+        Robot Battle Arena
+      </h1>
+      <CreateRobot />
+    </main>
   );
 }

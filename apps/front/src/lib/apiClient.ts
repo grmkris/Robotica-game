@@ -1,18 +1,18 @@
-import type { CatAPI } from "@/api";
-
-import { CAT_SERVICE_URLS, Environment } from "cat-sdk";
 import { hc } from "hono/client";
+import type { RobotAPI } from "../api";
 
-const environment = Environment.parse(process.env.NEXT_PUBLIC_ENVIRONMENT);
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/robot-battle";
 
-export const apiClient = hc<CatAPI>(CAT_SERVICE_URLS[environment].api, {
-  init: {
-    credentials: "include",
-    mode: "cors",
-    headers: {
-      "Content-Type": "application/json",
-    },
+export const apiClient = hc<RobotAPI>(API_URL, {
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+    return fetch(input, {
+      ...init,
+      credentials: "include",
+      headers: {
+        ...init?.headers,
+        "Content-Type": "application/json",
+      },
+    });
   },
 });
-
-export type ApiClient = typeof apiClient;

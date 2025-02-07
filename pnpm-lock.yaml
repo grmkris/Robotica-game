@@ -348,6 +348,9 @@ importers:
       resend:
         specifier: 4.1.1
         version: 4.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      robot-sdk:
+        specifier: workspace:*
+        version: link:../../packages/robot-sdk
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
@@ -689,6 +692,22 @@ importers:
         version: 5.7.3
 
   packages/rive-generator: {}
+
+  packages/robot-sdk:
+    dependencies:
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 1.9.4
+        version: 1.9.4
+      '@types/node':
+        specifier: ^22.12.0
+        version: 22.12.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
 
   packages/storage:
     dependencies:
@@ -15978,7 +15997,7 @@ snapshots:
 
   '@types/node-fetch@2.6.12':
     dependencies:
-      '@types/node': 18.19.74
+      '@types/node': 22.12.0
       form-data: 4.0.1
 
   '@types/node@12.20.55': {}
