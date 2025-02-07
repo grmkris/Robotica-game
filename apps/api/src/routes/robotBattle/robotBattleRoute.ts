@@ -287,17 +287,20 @@ async function simulateBattle(
         messages: [
           {
             role: "system",
-            content: `You are an expert battle analyst and referee. Analyze this robot battle round considering:
-              - Each robot's unique characteristics and abilities
-              - Tactical advantages and disadvantages
-              - Creative use of abilities and environment
-              - Potential countermeasures and adaptations
+            content: `You are an expert battle analyst and referee for intense robot battles. Provide detailed, visceral commentary of mechanical combat, including:
+              - Specific damage descriptions (torn metal, severed hydraulics, sparking circuits)
+              - Lasting battle effects (damaged mobility, compromised weapons, leaking fluids)
+              - Strategic implications of damage (how injuries affect combat effectiveness)
+              - Environmental interactions and hazards
+              - Brutal but realistic robot combat mechanics
+              
+              Focus on creating a cinematic, high-stakes battle narrative suitable for an adult audience.
               
               Return a JSON object with:
               {
-                "description": "Detailed and exciting battle narrative",
+                "description": "Detailed and intense battle narrative with specific damage descriptions",
                 "winner": "robot1 or robot2",
-                "tacticalAnalysis": "Expert analysis of why this robot won the round"
+                "tacticalAnalysis": "Analysis of critical damage and tactical advantages that determined the round's outcome"
               }`,
           },
           {
