@@ -6,10 +6,29 @@ type ChangePasswordSchema = {
 };
 
 export const getCurrentUser = async () => {
-  const response = await apiClient.auth.me.$get();
+  const response = await apiClient.auth.me();
   if (response.status !== 200) {
     const text = await response.text();
     throw new Error(`Failed to fetch current user: ${text}`);
+  }
+  return response.json();
+};
+
+export const connectWallet = async (
+  walletAddress: string,
+  signature: string,
+) => {
+  const response = await apiClient.auth.connect(walletAddress, signature);
+  if (response.status !== 200) {
+    throw new Error("Failed to connect wallet");
+  }
+  return response.json();
+};
+
+export const disconnectWallet = async () => {
+  const response = await apiClient.auth.disconnect();
+  if (response.status !== 200) {
+    throw new Error("Failed to disconnect wallet");
   }
   return response.json();
 };
@@ -22,9 +41,7 @@ export const getCurrentUser = async () => {
 export const changeUserPassword = async (props: {
   data: ChangePasswordSchema;
 }) => {
-  const response = await apiClient.auth["change-password"].$post({
-    json: props.data,
-  });
+  const response = await apiClient.auth.changePassword(props.data);
   if (response.status !== 200) {
     throw new Error("Failed to change user password");
   }
@@ -32,11 +49,25 @@ export const changeUserPassword = async (props: {
 };
 
 export const updateUser = async (data: { username?: string }) => {
-  const response = await apiClient.auth.me.$put({
-    json: data,
-  });
+  const response = await apiClient.auth.updateMe(data);
   if (response.status !== 200) {
     throw new Error("Failed to update user");
+  }
+  return response.json();
+};
+
+export const getNonce = async () => {
+  const response = await apiClient.auth.getNonce();
+  if (response.status !== 200) {
+    throw new Error("Failed to get nonce");
+  }
+  return response.json();
+};
+
+export const verifySignature = async (message: string, signature: string) => {
+  const response = await apiClient.auth.verify(message, signature);
+  if (response.status !== 200) {
+    throw new Error("Failed to verify signature");
   }
   return response.json();
 };

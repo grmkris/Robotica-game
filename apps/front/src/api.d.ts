@@ -25,6 +25,66 @@ export declare const createRobotApi: (props: { logger: Logger }) => Promise<
           status: 200;
         };
       };
+      "/auth/me": {
+        $get: {
+          output: {
+            id: string;
+            username: string;
+            email?: string;
+            emailVerified: boolean;
+          };
+          outputFormat: "json";
+          status: 200;
+        };
+      };
+      "/auth/siwe/nonce": {
+        $get: {
+          output: {
+            nonce: string;
+          };
+          outputFormat: "json";
+          status: 200;
+        };
+      };
+      "/auth/siwe/verify": {
+        $post: {
+          input: {
+            json: {
+              message: string;
+              signature: string;
+            };
+          };
+          output: {
+            ok: boolean;
+          };
+          outputFormat: "json";
+          status: 200;
+        };
+      };
+      "/auth/connect": {
+        $post: {
+          input: {
+            json: {
+              walletAddress: string;
+              signature: string;
+            };
+          };
+          output: {
+            ok: boolean;
+          };
+          outputFormat: "json";
+          status: 200;
+        };
+      };
+      "/auth/disconnect": {
+        $post: {
+          output: {
+            ok: boolean;
+          };
+          outputFormat: "json";
+          status: 200;
+        };
+      };
     }
   >
 >;

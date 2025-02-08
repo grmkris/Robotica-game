@@ -21,12 +21,19 @@ export type CatSiweAuth = {
 };
 
 type NonceResponse = { nonce: string };
+type VerifyResponse = { ok: boolean };
+type UserResponse = {
+  wallets: Array<{
+    address: string;
+    chainId: number;
+  }>;
+};
 
 export const createCatSiweAuth = (props: {
   apiClient: ApiClient;
 }): CatSiweAuth => ({
   getCsrfToken: async () => {
-    const response = await props.apiClient.auth.siwe.nonce.$get({});
+    const response = await props.apiClient.auth.siwe.nonce.$get();
     const data = (await response.json()) as NonceResponse;
     return data.nonce;
   },
@@ -35,7 +42,7 @@ export const createCatSiweAuth = (props: {
     const response = await props.apiClient.auth.siwe.verify.$post({
       json: { message, signature },
     });
-    const data = await response.json();
+    const data = (await response.json()) as VerifyResponse;
     if (!data.ok) return { ok: false };
     if (redirect) {
       window.location.href = callbackUrl;
@@ -51,9 +58,9 @@ export const createCatSiweAuth = (props: {
   },
 
   getSession: async () => {
-    const response = await props.apiClient.auth.me.$get({});
+    const response = await props.apiClient.auth.me();
     if (!response.ok) return null;
-    const data = await response.json();
+    const data = (await response.json()) as UserResponse;
     const wallet = data.wallets[0];
     if (!wallet) return null;
     const session: SIWESession = {
@@ -68,7 +75,7 @@ export const createCatSiweAuth = (props: {
     const response = await props.apiClient.auth.siwe.verify.$post({
       json: { message, signature },
     });
-    const data = await response.json();
+    const data = (await response.json()) as VerifyResponse;
     return data.ok;
   },
 });

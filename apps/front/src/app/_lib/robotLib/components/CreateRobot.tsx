@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiClient } from "@/lib/apiClient";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export function CreateRobot() {
   const [prompt, setPrompt] = useState("");
@@ -11,9 +12,7 @@ export function CreateRobot() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await apiClient["create-robot"].$post({
-        json: { prompt },
-      });
+      await apiClient.createRobot(prompt);
       setPrompt("");
     } catch (error) {
       console.error("Error creating robot:", error);
@@ -23,23 +22,25 @@ export function CreateRobot() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto my-8 max-w-md">
-      <div className="flex flex-col gap-4">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe your robot..."
-          className="rounded border p-2"
-          rows={4}
-        />
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
-        >
-          {isLoading ? "Creating..." : "Create Robot"}
-        </button>
-      </div>
-    </form>
+    <ProtectedRoute>
+      <form onSubmit={handleSubmit} className="mx-auto my-8 max-w-md">
+        <div className="flex flex-col gap-4">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe your robot..."
+            className="rounded border p-2"
+            rows={4}
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
+          >
+            {isLoading ? "Creating..." : "Create Robot"}
+          </button>
+        </div>
+      </form>
+    </ProtectedRoute>
   );
 }
