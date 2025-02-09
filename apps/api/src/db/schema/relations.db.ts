@@ -4,6 +4,7 @@ import {
   BattleTable,
   BattleRoundsTable,
   UserBattleStatsTable,
+  BattleRoomTable,
 } from "./robotBattle.db";
 import {
   emailVerificationCodes,
@@ -141,5 +142,24 @@ export const walletsRelations = relations(wallets, ({ one }) => ({
   user: one(users, {
     fields: [wallets.userId],
     references: [users.id],
+  }),
+}));
+
+export const battleRoomRelations = relations(BattleRoomTable, ({ one }) => ({
+  creator: one(users, {
+    fields: [BattleRoomTable.createdBy],
+    references: [users.id],
+  }),
+  robot1: one(RobotTable, {
+    fields: [BattleRoomTable.robot1Id],
+    references: [RobotTable.id],
+  }),
+  robot2: one(RobotTable, {
+    fields: [BattleRoomTable.robot2Id],
+    references: [RobotTable.id],
+  }),
+  battle: one(BattleTable, {
+    fields: [BattleRoomTable.battleId],
+    references: [BattleTable.id],
   }),
 }));

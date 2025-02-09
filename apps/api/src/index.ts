@@ -7,6 +7,7 @@ import {
 } from "@/queue/queueSingleton";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { Hono } from "hono";
+import { battleRoomRoutes } from "./routes/battleRoom.routes";
 
 // Create Hono app
 
@@ -26,6 +27,8 @@ const initApp = async () => {
   logger.info("Robot Battle API initialized successfully");
 
   const app = new Hono().route("/", robotApi);
+
+  app.route("/battle-room", battleRoomRoutes);
 
   return app;
 };

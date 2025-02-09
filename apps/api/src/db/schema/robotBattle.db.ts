@@ -8,6 +8,8 @@ import {
   pgEnum,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { users } from "./users.db";
+import type { RoomId } from "@/types/robotBattle.types";
 
 // Update the robot classes to be more descriptive
 export const ROBOT_CLASSES = [
@@ -92,3 +94,40 @@ export const UserBattleStatsTable = pgTable(
     userIdIdx: uniqueIndex("user_battle_stats_user_id_idx").on(table.userId),
   })
 );
+
+// Add to your existing robotBattle.db.ts
+export const battleRoomStatusEnum = pgEnum("battle_room_status", [
+  "WAITING", // Room created, waiting for opponent
+  "READY", // Both players joined, ready to start
+  "IN_PROGRESS", // Battle is ongoing
+  "COMPLETED", // Battle finished
+  "EXPIRED", // Room timed out without opponent
+]);
+
+export const BattleRoomTable = pgTable("battle_rooms", {
+  id: varchar("id", { length: 255 })
+    .primaryKey()
+    .$type<RoomId>()
+    .$defaultFn(() => generateId("room") as RoomId),
+  createdBy: varchar("created_by", { length: 255 })
+    .notNull()
+    .references(() => users.id),
+  robot1Id: varchar("robot1_id", { length: 255 })
+    .notNull()
+    .$type<`rob_${string}`>()
+    .references(() => RobotTable.id),
+  robot2Id: varchar("robot2_id", { length: 255 })
+    .$type<`rob_${string}`>()
+    .references(() => RobotTable.id),
+  status: battleRoomStatusEnum("status").notNull().default("WAITING"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .defaultNow()
+    .notNull(),
+  expiresAt: timestamp("expires_at", {
+    withTimezone: true,
+    mode: "date",
+  }).notNull(),
+  battleId: varchar("battle_id", { length: 255 }).references(
+    () => BattleTable.id
+  ),
+});

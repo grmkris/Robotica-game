@@ -1,5 +1,5 @@
 {
-  "id": "7b5bcc26-c80f-4368-b62a-d8412acb1c77",
+  "id": "e3e9f4a4-574d-4a64-a6b3-cddc272ee500",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -613,6 +613,123 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.battle_rooms": {
+      "name": "battle_rooms",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(255)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "robot1_id": {
+          "name": "robot1_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "robot2_id": {
+          "name": "robot2_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "battle_room_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'WAITING'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "battle_id": {
+          "name": "battle_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "battle_rooms_created_by_users_id_fk": {
+          "name": "battle_rooms_created_by_users_id_fk",
+          "tableFrom": "battle_rooms",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battle_rooms_robot1_id_robots_id_fk": {
+          "name": "battle_rooms_robot1_id_robots_id_fk",
+          "tableFrom": "battle_rooms",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "robot1_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battle_rooms_robot2_id_robots_id_fk": {
+          "name": "battle_rooms_robot2_id_robots_id_fk",
+          "tableFrom": "battle_rooms",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "robot2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battle_rooms_battle_id_battles_id_fk": {
+          "name": "battle_rooms_battle_id_battles_id_fk",
+          "tableFrom": "battle_rooms",
+          "tableTo": "battles",
+          "columnsFrom": [
+            "battle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.battle_rounds": {
       "name": "battle_rounds",
       "schema": "",
@@ -938,6 +1055,17 @@
       "schema": "public",
       "values": [
         "ETHEREUM"
+      ]
+    },
+    "public.battle_room_status": {
+      "name": "battle_room_status",
+      "schema": "public",
+      "values": [
+        "WAITING",
+        "READY",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "EXPIRED"
       ]
     },
     "public.battle_status": {

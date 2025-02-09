@@ -14,6 +14,7 @@ import { OpenAI } from "openai";
 import { env } from "@/env";
 import { sql } from "drizzle-orm";
 import type { BattleRound } from "@/types/robotBattle.types";
+import { battleRoomRoutes } from "../battleRoom.routes";
 
 // Define Zod schemas for validation
 const RobotIdSchema = z.string().regex(/^rob_[a-zA-Z0-9]+$/);
@@ -378,7 +379,7 @@ export const selectRobotRoute = new OpenAPIHono<{
 );
 
 // Add new helper function for battle simulation
-async function simulateBattle(
+export async function simulateBattle(
   battleId: string,
   robot1Id: string,
   robot2Id: string,
@@ -540,4 +541,5 @@ export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   .route("/", startBattleRoute)
   .route("/", getBattleStatusRoute)
   .route("/", getUserRobotsRoute)
-  .route("/", selectRobotRoute);
+  .route("/", selectRobotRoute)
+  .route("/", battleRoomRoutes);

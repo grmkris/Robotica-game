@@ -6,11 +6,15 @@ export type BattleId = `bat_${string}`;
 export type RoundId = `rnd_${string}`;
 export type StatsId = `stats_${string}`;
 export type UserId = `user${string}`;
+export type RoomId = `room_${string}`;
+
+// Add "room" to the possible types
+export type IdType = "robot" | "battle" | "round" | "stats" | "room";
 
 // Generate ID function
 export function generateId(
-  type: "robot" | "battle" | "round" | "stats"
-): RobotId | BattleId | RoundId | StatsId {
+  type: IdType
+): RobotId | BattleId | RoundId | StatsId | RoomId {
   const uuid = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   switch (type) {
     case "robot":
@@ -21,6 +25,8 @@ export function generateId(
       return `rnd_${uuid}` as RoundId;
     case "stats":
       return `stats_${uuid}` as StatsId;
+    case "room":
+      return `room_${uuid}` as RoomId;
   }
 }
 
