@@ -13,3 +13,8 @@ export function getBaseUrl() {
     return `http://${clientEnvs.NEXT_PUBLIC_DOMAIN}`;
   return `https://${clientEnvs.NEXT_PUBLIC_DOMAIN}`;
 }
+
+export function shortenAddress(address: string) {
+  if (!address) return "";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}

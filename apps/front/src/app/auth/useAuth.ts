@@ -15,20 +15,40 @@ import {
 } from "./authActions";
 import { useEffect, useState } from "react";
 
+// Define the session type based on the actual response
+type Session = {
+  id: string;
+  username: string;
+  email: string | null;
+  name: string | null;
+  normalizedEmail: string | null;
+} | null;
+
+// Add type for the user response
+type User = {
+  id: string;
+  walletAddress?: string;
+  // ... other user fields
+};
+
 export function useAuth() {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const user = await getCurrentUser();
-        console.log("User data:", user);
-        setIsAuthenticated(!!user);
+        const session = (await getCurrentUser()) as Session;
+        console.log("Auth state:", session);
+        setIsAuthenticated(!!session);
+        // Get wallet address from session id
+        setWalletAddress(session?.id || null);
       } catch (error) {
         console.error("Auth check failed:", error);
         setIsAuthenticated(false);
+        setWalletAddress(null);
       } finally {
         setIsLoading(false);
       }
@@ -56,12 +76,14 @@ export function useAuth() {
     mutationFn: disconnectWallet,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      setWalletAddress(null);
     },
   });
 
   return {
     isAuthenticated,
     isLoading,
+    walletAddress,
     connectWallet: connectWalletMutation.mutateAsync,
     disconnectWallet: disconnectWalletMutation.mutateAsync,
   };

@@ -5,38 +5,23 @@ type ChangePasswordSchema = {
   newPassword: string;
 };
 
-export const getCurrentUser = async () => {
+export async function getCurrentUser() {
   const response = await apiClient.auth.me();
-  if (response.status !== 200) {
-    const text = await response.text();
-    throw new Error(`Failed to fetch current user: ${text}`);
-  }
+  if (!response.ok) return null;
   return response.json();
-};
+}
 
-export const connectWallet = async (
-  walletAddress: string,
-  signature: string,
-) => {
+export async function connectWallet(walletAddress: string, signature: string) {
   const response = await apiClient.auth.connect(walletAddress, signature);
-  if (response.status !== 200) {
-    throw new Error("Failed to connect wallet");
-  }
+  if (!response.ok) throw new Error("Failed to connect wallet");
   return response.json();
-};
+}
 
-export const disconnectWallet = async () => {
+export async function disconnectWallet() {
   const response = await apiClient.auth.disconnect();
-  if (response.status !== 200) {
-    throw new Error("Failed to disconnect wallet");
-  }
+  if (!response.ok) throw new Error("Failed to disconnect wallet");
   return response.json();
-};
-
-// You can add more auth-related actions here if needed, such as:
-// export const login = async (credentials: LoginCredentials) => { ... }
-// export const logout = async () => { ... }
-// export const register = async (userData: RegisterData) => { ... }
+}
 
 export const changeUserPassword = async (props: {
   data: ChangePasswordSchema;
@@ -48,26 +33,22 @@ export const changeUserPassword = async (props: {
   return response.json();
 };
 
-export const updateUser = async (data: { username?: string }) => {
+export async function updateUser(data: { username?: string }) {
   const response = await apiClient.auth.updateMe(data);
-  if (response.status !== 200) {
-    throw new Error("Failed to update user");
-  }
+  if (!response.ok) throw new Error("Failed to update user");
   return response.json();
-};
+}
 
-export const getNonce = async () => {
-  const response = await apiClient.auth.getNonce();
-  if (response.status !== 200) {
-    throw new Error("Failed to get nonce");
-  }
+export async function getNonce() {
+  const response = await apiClient.auth.siwe.nonce.$get();
+  if (!response.ok) throw new Error("Failed to get nonce");
   return response.json();
-};
+}
 
-export const verifySignature = async (message: string, signature: string) => {
-  const response = await apiClient.auth.verify(message, signature);
-  if (response.status !== 200) {
-    throw new Error("Failed to verify signature");
-  }
+export async function verifySignature(message: string, signature: string) {
+  const response = await apiClient.auth.siwe.verify.$post({
+    json: { message, signature },
+  });
+  if (!response.ok) throw new Error("Failed to verify signature");
   return response.json();
-};
+}

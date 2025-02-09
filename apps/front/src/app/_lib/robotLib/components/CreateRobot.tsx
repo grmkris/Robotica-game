@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { apiClient } from "@/lib/apiClient";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export function CreateRobot() {
   const [prompt, setPrompt] = useState("");
@@ -13,34 +15,44 @@ export function CreateRobot() {
     setIsLoading(true);
     try {
       await apiClient.createRobot(prompt);
+      toast.success("Robot created successfully!");
       setPrompt("");
     } catch (error) {
       console.error("Error creating robot:", error);
+      toast.error("Failed to create robot");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ProtectedRoute>
-      <form onSubmit={handleSubmit} className="mx-auto my-8 max-w-md">
-        <div className="flex flex-col gap-4">
-          <textarea
+    <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-6 backdrop-blur-sm">
+      <h3 className="mb-4 text-xl font-semibold text-cyan-400">
+        Design Your Battle Robot
+      </h3>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="prompt" className="text-sm text-zinc-300">
+            Describe your robot's capabilities and appearance
+          </label>
+          <Textarea
+            id="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe your robot..."
-            className="rounded border p-2"
-            rows={4}
+            placeholder="Example: A heavily armored robot with plasma cannons and advanced targeting systems..."
+            className="h-32 border-zinc-700 bg-zinc-900/50 focus:border-cyan-500"
           />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-gray-400"
-          >
-            {isLoading ? "Creating..." : "Create Robot"}
-          </button>
         </div>
+
+        <Button
+          type="submit"
+          disabled={isLoading || !prompt}
+          className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-zinc-700"
+        >
+          {isLoading ? "Creating..." : "Create Robot"}
+        </Button>
       </form>
-    </ProtectedRoute>
+    </div>
   );
 }
