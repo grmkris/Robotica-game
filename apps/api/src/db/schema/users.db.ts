@@ -1,6 +1,4 @@
-import { CatInteractionsTable } from "@/db/schema/catAgent.db";
 import {
-  type CatInteractionId,
   type EvmAddress,
   type ItemId,
   type UserId,

@@ -8,7 +8,7 @@ import { validateUser } from "@/routes/helpers";
 import type { ContextVariables } from "@/types";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { BATTLE_STATUS, generateId } from "@/types/robotBattle.types";
-import { eq } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { OpenAI } from "openai";
 import { env } from "@/env";
@@ -18,7 +18,6 @@ import type { BattleRound } from "@/types/robotBattle.types";
 // Define Zod schemas for validation
 const RobotIdSchema = z.string().regex(/^rob_[a-zA-Z0-9]+$/);
 const BattleIdSchema = z.string().regex(/^bat_[a-zA-Z0-9]+$/);
-const RoundIdSchema = z.string().regex(/^rnd_[a-zA-Z0-9]+$/);
 
 // Create Robot Route
 export const createRobotRoute = new OpenAPIHono<{
@@ -254,6 +253,130 @@ export const getBattleStatusRoute = new OpenAPIHono<{
   }
 );
 
+// Get User Robots Route
+export const getUserRobotsRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "get",
+    path: "user-robots",
+    tags: ["RobotBattle"],
+    summary: "Get all robots created by the user",
+    responses: {
+      200: {
+        description: "Success",
+        content: {
+          "application/json": {
+            schema: z.object({
+              robots: z.array(
+                z.object({
+                  id: RobotIdSchema,
+                  name: z.string(),
+                  description: z.string(),
+                  prompt: z.string(),
+                  createdAt: z.string(),
+                })
+              ),
+              selectedRobotId: RobotIdSchema.nullable(),
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const user = validateUser(c);
+    const db = c.get("db");
+
+    const robots = await db.query.RobotTable.findMany({
+      where: eq(RobotTable.createdBy, user.id),
+      orderBy: [desc(RobotTable.createdAt)],
+    });
+
+    const stats = await db.query.UserBattleStatsTable.findFirst({
+      where: eq(UserBattleStatsTable.userId, user.id),
+    });
+
+    return c.json({
+      robots,
+      selectedRobotId: stats?.selectedRobotId ?? null,
+    });
+  }
+);
+
+// Select Robot Route
+export const selectRobotRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "post",
+    path: "select-robot",
+    tags: ["RobotBattle"],
+    summary: "Select a robot as the user's active robot",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              robotId: RobotIdSchema,
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Success",
+        content: {
+          "application/json": {
+            schema: z.object({
+              success: z.boolean(),
+              selectedRobotId: RobotIdSchema,
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const user = validateUser(c);
+    const { robotId } = c.req.valid("json");
+    const db = c.get("db");
+
+    // Verify the robot exists and belongs to the user
+    const robot = await db.query.RobotTable.findFirst({
+      where: and(
+        eq(RobotTable.id, robotId as `rob_${string}`),
+        eq(RobotTable.createdBy, user.id)
+      ),
+    });
+
+    if (!robot) {
+      throw new HTTPException(404, { message: "Robot not found" });
+    }
+
+    // Update or create user stats with selected robot
+    await db
+      .insert(UserBattleStatsTable)
+      .values({
+        userId: user.id,
+        selectedRobotId: robotId as `rob_${string}`,
+      })
+      .onConflictDoUpdate({
+        target: [UserBattleStatsTable.userId],
+        set: {
+          selectedRobotId: robotId as `rob_${string}`,
+          updatedAt: new Date(),
+        },
+      });
+
+    return c.json({
+      success: true,
+      selectedRobotId: robotId,
+    });
+  }
+);
+
 // Add new helper function for battle simulation
 async function simulateBattle(
   battleId: string,
@@ -415,4 +538,6 @@ async function updateUserBattleStats(
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   .route("/", createRobotRoute)
   .route("/", startBattleRoute)
-  .route("/", getBattleStatusRoute);
+  .route("/", getBattleStatusRoute)
+  .route("/", getUserRobotsRoute)
+  .route("/", selectRobotRoute);

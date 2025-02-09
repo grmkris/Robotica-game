@@ -85,8 +85,48 @@ export declare const createRobotApi: (props: { logger: Logger }) => Promise<
           status: 200;
         };
       };
+      "/robot-battle/user-robots": {
+        get: {
+          response: UserRobotsResponse;
+        };
+      };
+      "/robot-battle/select-robot": {
+        post: {
+          input: {
+            json: {
+              robotId: string;
+            };
+          };
+          response: {
+            success: boolean;
+          };
+        };
+      };
+      "/robot-battle/create-robot": {
+        post: {
+          input: {
+            json: {
+              prompt: string;
+            };
+          };
+          response: Robot;
+        };
+      };
     }
   >
 >;
+
+interface Robot {
+  id: string;
+  name: string;
+  description: string;
+  prompt: string;
+  createdAt: string;
+}
+
+interface UserRobotsResponse {
+  robots: Robot[];
+  selectedRobotId: string | null;
+}
 
 export type RobotAPI = Awaited<ReturnType<typeof createRobotApi>>;

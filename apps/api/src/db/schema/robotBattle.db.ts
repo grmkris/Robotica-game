@@ -8,7 +8,6 @@ import {
   pgEnum,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import type { RobotId, BattleId, RoundId } from "@/types/robotBattle.types";
 
 // Update the robot classes to be more descriptive
 export const ROBOT_CLASSES = [
@@ -85,6 +84,9 @@ export const UserBattleStatsTable = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),
+    selectedRobotId: varchar("selected_robot_id", { length: 255 })
+      .$type<`rob_${string}`>()
+      .references(() => RobotTable.id),
   },
   (table) => ({
     userIdIdx: uniqueIndex("user_battle_stats_user_id_idx").on(table.userId),

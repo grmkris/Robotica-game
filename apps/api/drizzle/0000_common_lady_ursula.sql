@@ -108,11 +108,11 @@ CREATE TABLE "battles" (
 --> statement-breakpoint
 CREATE TABLE "robots" (
 	"id" varchar(255) PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
+	"name" varchar(255) NOT NULL,
 	"description" text NOT NULL,
 	"prompt" text NOT NULL,
 	"created_by" varchar(255) NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "user_battle_stats" (
@@ -121,7 +121,8 @@ CREATE TABLE "user_battle_stats" (
 	"wins" integer DEFAULT 0 NOT NULL,
 	"losses" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"selected_robot_id" varchar(255)
 );
 --> statement-breakpoint
 ALTER TABLE "email_verification_codes" ADD CONSTRAINT "email_verification_codes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -131,6 +132,9 @@ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_item_id_items_id_fk" FOR
 ALTER TABLE "user_items" ADD CONSTRAINT "user_items_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_items" ADD CONSTRAINT "user_items_item_id_items_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."items"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "battles" ADD CONSTRAINT "battles_robot1_id_robots_id_fk" FOREIGN KEY ("robot1_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "battles" ADD CONSTRAINT "battles_robot2_id_robots_id_fk" FOREIGN KEY ("robot2_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_battle_stats" ADD CONSTRAINT "user_battle_stats_selected_robot_id_robots_id_fk" FOREIGN KEY ("selected_robot_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "normalized_email_idx" ON "users" USING btree ("normalized_email");--> statement-breakpoint
 CREATE UNIQUE INDEX "username_idx" ON "users" USING btree ("username");--> statement-breakpoint
 CREATE UNIQUE INDEX "wallet_address_chain_idx" ON "wallets" USING btree ("address","chain_id");--> statement-breakpoint

@@ -2,6 +2,7 @@ import { useAuth } from "@/app/auth/useAuth";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { shortenAddress } from "@/lib/utils";
+import Link from "next/link";
 
 export function Header() {
   const { isAuthenticated, disconnectWallet, walletAddress } = useAuth();
@@ -36,6 +37,15 @@ export function Header() {
             </Button>
           </div>
         )}
+
+        <nav className="flex items-center gap-4">
+          <Link
+            href="/robot-battle"
+            className="text-foreground transition-colors hover:text-primary"
+          >
+            Robot Battle
+          </Link>
+        </nav>
       </div>
     </header>
   );

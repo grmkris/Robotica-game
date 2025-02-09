@@ -1,5 +1,5 @@
 {
-  "id": "d2fb4ae2-2218-4745-b068-250e221366d5",
+  "id": "7b5bcc26-c80f-4368-b62a-d8412acb1c77",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -724,7 +724,34 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "battles_robot1_id_robots_id_fk": {
+          "name": "battles_robot1_id_robots_id_fk",
+          "tableFrom": "battles",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "robot1_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battles_robot2_id_robots_id_fk": {
+          "name": "battles_robot2_id_robots_id_fk",
+          "tableFrom": "battles",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "robot2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -743,7 +770,7 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
@@ -767,7 +794,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -824,6 +851,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "selected_robot_id": {
+          "name": "selected_robot_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -843,7 +876,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "user_battle_stats_selected_robot_id_robots_id_fk": {
+          "name": "user_battle_stats_selected_robot_id_robots_id_fk",
+          "tableFrom": "user_battle_stats",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "selected_robot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

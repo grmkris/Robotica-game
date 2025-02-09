@@ -1,11 +1,7 @@
-import { CatTable } from "@/db/schema/catAgent.db";
 import * as schema from "@/db/schema/schema.db";
 import * as robotSchema from "@/db/schema/robotBattle.db";
-import type { InsertItemSchema } from "@/db/schema/schemas.db";
-import { type ItemType, items } from "@/db/schema/users.db";
 import { env } from "@/env";
-import type { Logger } from "cat-logger";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { type PostgresJsDatabase, drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";

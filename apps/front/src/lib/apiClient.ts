@@ -39,6 +39,21 @@ export const apiClient = {
     if (!endpoint) throw new Error("Endpoint not found");
     return endpoint.$post({ json: { prompt } });
   },
+
+  // Add new robot battle endpoints
+  robotBattle: {
+    getUserRobots: () => {
+      const endpoint = client["/robot-battle/user-robots"] as GetEndpoint;
+      if (!endpoint) throw new Error("Endpoint not found");
+      return endpoint.$get();
+    },
+    selectActiveRobot: (robotId: string) => {
+      const endpoint = client["/robot-battle/select-robot"] as PostEndpoint;
+      if (!endpoint) throw new Error("Endpoint not found");
+      return endpoint.$post({ json: { robotId } });
+    },
+  },
+
   auth: {
     me: () => {
       const endpoint = client["/auth/me"] as GetEndpoint;
