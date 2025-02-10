@@ -3,7 +3,7 @@ import {
   BattleStatus,
   BattleTable,
   RobotTable,
-  UserBattleStatsTable
+  UserBattleStatsTable,
 } from "@/db/schema/robotBattle.db";
 import { users } from "@/db/schema/users.db";
 import { env } from "@/env";
@@ -15,12 +15,9 @@ import { LiteralClient } from "@literalai/client";
 import { executeStepStructured } from "cat-ai";
 import type { Logger } from "cat-logger";
 import { createMediaGenClient } from "cat-media-gen";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { BattleId, RobotId, type UserId, generateId } from "robot-sdk";
-// Define Zod schemas for validation
-const RobotIdSchema = RobotId;
-const BattleIdSchema = BattleId;
 
 // Add to the top of the file with other env variables
 const mediaGen = createMediaGenClient({ falApiKey: env.FAL_API_KEY });
@@ -33,26 +30,14 @@ const RobotGenerationSchema = z.object({
   weaknesses: z.array(z.string()),
 });
 
-export const ROBOT_TYPES = ["mobility", "weapons", "structural", "power"] as const;
+export const ROBOT_TYPES = [
+  "mobility",
+  "weapons",
+  "structural",
+  "power",
+] as const;
 export const RobotType = z.enum(ROBOT_TYPES);
 export type RobotType = z.infer<typeof RobotType>;
-const BattleRoundSchema = z.object({
-  description: z.string(),
-  winner: RobotId, // ID of the robot that won the round
-  tacticalAnalysis: z.string(),
-  inflictedDamage: z.object({
-    robot1: z.array(z.object({
-      type: RobotType,
-      severity: z.number(),
-      description: z.string(),
-    })),
-    robot2: z.array(z.object({
-      type: RobotType,
-      severity: z.number(),
-      description: z.string(),
-    })),
-  }),
-});
 
 // Create the LiteralAI client
 const literalClient = new LiteralClient({
@@ -85,7 +70,7 @@ export const createRobotRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              id: RobotIdSchema,
+              id: RobotId,
               name: z.string(),
               description: z.string(),
               prompt: z.string(),
@@ -138,7 +123,7 @@ export const createRobotRoute = new OpenAPIHono<{
       }
       throw new HTTPException(500, { message: "Failed to create robot" });
     }
-  }
+  },
 );
 
 // Helper function to generate robot data
@@ -180,7 +165,7 @@ async function generateRobotData(prompt: string, logger: Logger) {
 // Helper function to generate robot image
 async function generateRobotImage(
   robotData: { name: string; description: string },
-  logger: Logger
+  logger: Logger,
 ): Promise<string> {
   try {
     const prompt = `Detailed technical illustration of a robot named ${robotData.name}. ${robotData.description}. Video game style, detailed mechanical parts, professional lighting, high quality render, 8k resolution, unreal engine style`;
@@ -234,8 +219,8 @@ export const startBattleRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              robot1Id: RobotIdSchema,
-              robot2Id: RobotIdSchema,
+              robot1Id: RobotId,
+              robot2Id: RobotId,
             }),
           },
         },
@@ -247,7 +232,7 @@ export const startBattleRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              battleId: BattleIdSchema,
+              battleId: BattleId,
             }),
           },
         },
@@ -284,7 +269,6 @@ export const startBattleRoute = new OpenAPIHono<{
         })
         .returning();
 
-
       // Insert battle robots
       await db.insert(BattleRobotsTable).values([
         { id: generateId("battleRobot"), battleId, robotId: robot1Id },
@@ -302,7 +286,7 @@ export const startBattleRoute = new OpenAPIHono<{
       }
       throw new HTTPException(500, { message: "Failed to start battle" });
     }
-  }
+  },
 );
 
 export const createBattleRoute = new OpenAPIHono<{
@@ -318,7 +302,7 @@ export const createBattleRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              robot1Id: RobotIdSchema
+              robot1Id: RobotId,
             }),
           },
         },
@@ -330,7 +314,7 @@ export const createBattleRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              battleId: BattleIdSchema,
+              battleId: BattleId,
             }),
           },
         },
@@ -348,7 +332,7 @@ export const createBattleRoute = new OpenAPIHono<{
       const robot1 = await db.query.RobotTable.findFirst({
         where: and(
           eq(RobotTable.id, robot1Id),
-          eq(RobotTable.createdBy, users.id)
+          eq(RobotTable.createdBy, users.id),
         ),
       });
 
@@ -378,7 +362,7 @@ export const createBattleRoute = new OpenAPIHono<{
       }
       throw new HTTPException(500, { message: "Failed to create battle" });
     }
-  }
+  },
 );
 
 const joinBattleRoute = new OpenAPIHono<{
@@ -394,8 +378,8 @@ const joinBattleRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              battleId: BattleIdSchema,
-              robotId: RobotIdSchema,
+              battleId: BattleId,
+              robotId: RobotId,
             }),
           },
         },
@@ -440,7 +424,7 @@ const joinBattleRoute = new OpenAPIHono<{
     void resolveBattle({ battleId, db, logger });
 
     return c.json({ success: true });
-  }
+  },
 );
 
 // Get Battle Status Route
@@ -454,7 +438,7 @@ export const getBattleStatusRoute = new OpenAPIHono<{
     summary: "Get the current status of a battle",
     request: {
       query: z.object({
-        battleId: BattleIdSchema,
+        battleId: BattleId,
       }),
     },
     responses: {
@@ -468,7 +452,7 @@ export const getBattleStatusRoute = new OpenAPIHono<{
                 z.object({
                   roundNumber: z.number(),
                   description: z.string(),
-                })
+                }),
               ),
             }),
           },
@@ -492,7 +476,7 @@ export const getBattleStatusRoute = new OpenAPIHono<{
     }
 
     return c.json(battle);
-  }
+  },
 );
 
 // Get User Robots Route
@@ -512,14 +496,14 @@ export const getUserRobotsRoute = new OpenAPIHono<{
             schema: z.object({
               robots: z.array(
                 z.object({
-                  id: RobotIdSchema,
+                  id: RobotId,
                   name: z.string(),
                   description: z.string(),
                   prompt: z.string(),
                   createdAt: z.string(),
-                })
+                }),
               ),
-              selectedRobotId: RobotIdSchema.nullable(),
+              selectedRobotId: RobotId.nullable(),
             }),
           },
         },
@@ -543,9 +527,8 @@ export const getUserRobotsRoute = new OpenAPIHono<{
       robots,
       selectedRobotId: stats?.selectedRobotId ?? null,
     });
-  }
+  },
 );
-
 
 // Select Robot Route
 export const selectRobotRoute = new OpenAPIHono<{
@@ -561,7 +544,7 @@ export const selectRobotRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              robotId: RobotIdSchema,
+              robotId: RobotId,
             }),
           },
         },
@@ -574,7 +557,7 @@ export const selectRobotRoute = new OpenAPIHono<{
           "application/json": {
             schema: z.object({
               success: z.boolean(),
-              selectedRobotId: RobotIdSchema,
+              selectedRobotId: RobotId,
             }),
           },
         },
@@ -590,7 +573,7 @@ export const selectRobotRoute = new OpenAPIHono<{
     const robot = await db.query.RobotTable.findFirst({
       where: and(
         eq(RobotTable.id, robotId as `rob_${string}`),
-        eq(RobotTable.createdBy, user.id)
+        eq(RobotTable.createdBy, user.id),
       ),
     });
 
@@ -602,13 +585,13 @@ export const selectRobotRoute = new OpenAPIHono<{
     await db
       .insert(UserBattleStatsTable)
       .values({
-        userId: user.id as UserId,
-        selectedRobotId: robotId as `rob_${string}`,
+        userId: user.id,
+        selectedRobotId: robotId,
       })
       .onConflictDoUpdate({
         target: [UserBattleStatsTable.userId],
         set: {
-          selectedRobotId: robotId as `rob_${string}`,
+          selectedRobotId: robotId,
           updatedAt: new Date(),
         },
       });
@@ -617,10 +600,216 @@ export const selectRobotRoute = new OpenAPIHono<{
       success: true,
       selectedRobotId: robotId,
     });
-  }
+  },
 );
 
-// Combine all routes
+// Add this after other route definitions but before robotBattleApp definition
+export const battleEventsRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "get",
+    path: "battle-events/{battleId}",
+    tags: ["RobotBattle"],
+    summary: "Stream battle events in real-time",
+    request: {
+      params: z.object({
+        battleId: BattleId,
+      }),
+    },
+    responses: {
+      200: {
+        description: "SSE stream of battle events",
+        content: {
+          "text/event-stream": {
+            schema: z.object({
+              battle: z.object({
+                id: BattleId,
+                status: BattleStatus,
+                rounds: z.array(
+                  z.object({
+                    roundNumber: z.number(),
+                    description: z.string(),
+                  }),
+                ),
+              }),
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const battleId = c.req.param("battleId");
+    const db = c.get("db");
+    const logger = c.get("logger");
+
+    logger.info("SSE connection established for battle:", battleId);
+
+    // Helper function to encode SSE message
+    const encoder = new TextEncoder();
+    const encodeMessage = (data: unknown) => {
+      return encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    return new Response(
+      new ReadableStream({
+        async start(controller) {
+          // Initial battle state
+          const battle = await db.query.BattleTable.findFirst({
+            where: eq(BattleTable.id, battleId as `bat_${string}`),
+            with: {
+              rounds: true,
+            },
+          });
+
+          if (!battle) {
+            logger.warn("Battle not found:", battleId);
+            controller.close();
+            return;
+          }
+
+          logger.info("Sending initial battle state:", battle);
+          controller.enqueue(encodeMessage({ battle }));
+
+          // Set up polling for updates
+          const interval = setInterval(async () => {
+            const updatedBattle = await db.query.BattleTable.findFirst({
+              where: eq(BattleTable.id, battleId as `bat_${string}`),
+              with: {
+                rounds: true,
+              },
+            });
+
+            if (!updatedBattle) {
+              logger.warn("Battle no longer exists:", battleId);
+              clearInterval(interval);
+              controller.close();
+              return;
+            }
+
+            logger.info("Sending battle update:", updatedBattle);
+            controller.enqueue(encodeMessage({ battle: updatedBattle }));
+
+            // Close stream if battle is complete
+            if (updatedBattle.status === "COMPLETED") {
+              logger.info("Battle completed, closing SSE connection");
+              clearInterval(interval);
+              controller.close();
+            }
+          }, 1000);
+
+          // Clean up on disconnect
+          c.req.raw.signal.addEventListener("abort", () => {
+            logger.info("Client disconnected, cleaning up");
+            clearInterval(interval);
+            controller.close();
+          });
+        },
+      }),
+      {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      },
+    );
+  },
+);
+
+const listBattlesRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "get",
+    path: "battles",
+    tags: ["RobotBattle"],
+    summary: "List all battles with pagination",
+    request: {
+      query: z.object({
+        page: z.string().optional().default("1"),
+        limit: z.string().optional().default("10"),
+      }),
+    },
+    responses: {
+      200: {
+        description: "List of battles",
+        content: {
+          "application/json": {
+            schema: z.object({
+              battles: z.array(
+                z.object({
+                  id: BattleId,
+                  status: BattleStatus,
+                  createdAt: z.coerce.date(),
+                  robots: z.array(
+                    z.object({
+                      id: RobotId,
+                      name: z.string(),
+                      imageUrl: z.string().nullish(),
+                    }),
+                  ),
+                }),
+              ),
+              total: z.number(),
+              page: z.number(),
+              totalPages: z.number(),
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const { page, limit } = c.req.valid("query");
+    const db = c.get("db");
+
+    const pageNum = Number.parseInt(page);
+    const limitNum = Number.parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+
+    // Get total count of battles
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(BattleTable);
+
+    // Get battles with their robots
+    const battles = await db.query.BattleTable.findMany({
+      limit: limitNum,
+      offset,
+      orderBy: [desc(BattleTable.createdAt)],
+      with: {
+        battleRobots: {
+          with: {
+            robot: true,
+          },
+        },
+      },
+    });
+
+    // Transform the data to match the response schema
+    const formattedBattles = battles.map((battle) => ({
+      id: battle.id,
+      status: battle.status,
+      createdAt: battle.createdAt.toISOString(),
+      robots: battle.battleRobots.map((br) => ({
+        id: br.robot.id,
+        name: br.robot.name,
+        imageUrl: br.robot.imageUrl,
+      })),
+    }));
+
+    return c.json({
+      battles: formattedBattles,
+      total: Number(count),
+      page: pageNum,
+      totalPages: Math.ceil(Number(count) / limitNum),
+    });
+  },
+);
+
+// Update the robotBattleApp to include the new route
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   .route("/", createRobotRoute)
   .route("/", createBattleRoute)
@@ -629,3 +818,5 @@ export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   .route("/", getBattleStatusRoute)
   .route("/", getUserRobotsRoute)
   .route("/", selectRobotRoute)
+  .route("/", battleEventsRoute)
+  .route("/", listBattlesRoute);

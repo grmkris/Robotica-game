@@ -2,28 +2,28 @@ import { customAlphabet } from "nanoid";
 import { z } from "zod";
 
 const prefixes = {
-  robot: "rob",
-  battle: "bat",
-  round: "rnd",
-  stats: "stats",
-  room: "room",
-  user: "user",
-  battleRobot: "batrob",
+	robot: "rob",
+	battle: "bat",
+	round: "rnd",
+	stats: "stats",
+	room: "room",
+	user: "user",
+	battleRobot: "batrob",
 } as const;
 
 type Prefix = (typeof prefixes)[keyof typeof prefixes];
 export type Entity = keyof typeof prefixes;
 
 type PrefixToId = {
-  [K in keyof typeof prefixes]: `${(typeof prefixes)[K]}${string}`;
+	[K in keyof typeof prefixes]: `${(typeof prefixes)[K]}${string}`;
 };
 
 // Zod schemas
 const createIdSchema = <T extends Prefix>(prefix: T) =>
-  z.custom<`${T}${string}`>(
-    (val): val is `${T}${string}` =>
-      typeof val === "string" && val.startsWith(prefix)
-  );
+	z.custom<`${T}${string}`>(
+		(val): val is `${T}${string}` =>
+			typeof val === "string" && val.startsWith(prefix),
+	);
 
 export const RobotId = createIdSchema(prefixes.robot);
 export type RobotId = z.infer<typeof RobotId>;
@@ -41,12 +41,15 @@ export const BattleRobotId = createIdSchema(prefixes.battleRobot);
 export type BattleRobotId = z.infer<typeof BattleRobotId>;
 
 export function generateId<T extends keyof typeof prefixes>(
-  prefix: T,
-  { length = 12, separator = "_" }: { length?: number; separator?: string } = {}
+	prefix: T,
+	{
+		length = 12,
+		separator = "_",
+	}: { length?: number; separator?: string } = {},
 ): PrefixToId[T] {
-  const id = customAlphabet(
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-    length
-  )();
-  return `${prefixes[prefix]}${separator}${id}` as PrefixToId[T];
+	const id = customAlphabet(
+		"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+		length,
+	)();
+	return `${prefixes[prefix]}${separator}${id}` as PrefixToId[T];
 }
