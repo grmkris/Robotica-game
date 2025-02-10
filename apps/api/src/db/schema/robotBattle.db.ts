@@ -1,18 +1,16 @@
-import type { BattleDamageReport } from "@/types/robotBattle.types";
 import {
   integer,
-  json,
   pgEnum,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
-  varchar,
+  varchar
 } from "drizzle-orm/pg-core";
-import type { BattleId, RobotId, RoundId, StatsId, UserId } from "robot-sdk";
+import type { BattleId, BattleRobotId, RobotId, RoundId, StatsId, UserId } from "robot-sdk";
 import { type RoomId, generateId } from "robot-sdk";
+import { z } from "zod";
 import { users } from "./users.db";
-
 // Update the robot classes to be more descriptive
 export const ROBOT_CLASSES = [
   "ASSAULT",
@@ -36,7 +34,7 @@ export const RobotTable = pgTable("robots", {
   description: text("description").notNull(),
   prompt: text("prompt").notNull(),
   imageUrl: text("image_url"),
-  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdBy: varchar("created_by", { length: 255 }).notNull().references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .defaultNow()
     .notNull(),
@@ -44,17 +42,27 @@ export const RobotTable = pgTable("robots", {
 
 // Battle table
 export const BattleTable = pgTable("battles", {
-  id: varchar("id", { length: 255 }).primaryKey().$type<BattleId>(),
-  robot1Id: varchar("robot1_id", { length: 255 })
-    .notNull()
-    .references(() => RobotTable.id),
-  robot2Id: varchar("robot2_id", { length: 255 })
-    .notNull()
-    .references(() => RobotTable.id),
+  id: varchar("id", { length: 255 }).primaryKey().$type<BattleId>().$defaultFn(() => generateId("battle")),
   status: battleStatusEnum("status").notNull(),
-  winnerId: varchar("winner_id", { length: 255 }).$type<RobotId>(),
+  winnerId: varchar("winner_id", { length: 255 }).$type<RobotId>().references(() => RobotTable.id),
   startedAt: timestamp("started_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
+});
+
+// Battle Robots table
+export const BattleRobotsTable = pgTable("battle_robots", {
+  id: varchar("id", { length: 255 }).primaryKey().$type<BattleRobotId>(),
+  battleId: varchar("battle_id", { length: 255 })
+    .$type<BattleId>()
+    .notNull()
+    .references(() => BattleTable.id),
+  robotId: varchar("robot_id", { length: 255 })
+    .$type<RobotId>()
+    .notNull()
+    .references(() => RobotTable.id),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .defaultNow()
+    .notNull(),
 });
 
 // Battle Rounds table (for detailed battle progression)
@@ -62,16 +70,11 @@ export const BattleRoundsTable = pgTable("battle_rounds", {
   id: varchar("id", { length: 255 }).primaryKey().$type<RoundId>(),
   battleId: varchar("battle_id", { length: 255 })
     .$type<BattleId>()
-    .notNull(),
+    .notNull()
+    .references(() => BattleTable.id),
   roundNumber: integer("round_number").notNull(),
   description: text("description").notNull(), // AI-generated battle narrative
   tacticalAnalysis: text("tactical_analysis").notNull(), // AI's explanation of the outcome
-  robot1Action: text("robot1_action").notNull(),
-  robot2Action: text("robot2_action").notNull(),
-  roundWinnerId: varchar("round_winner_id", { length: 255 })
-    .$type<RobotId>()
-    .notNull(),
-  damageReport: json("damage_report").$type<BattleDamageReport>(),
 });
 
 // Add user stats/rankings table
@@ -83,7 +86,8 @@ export const UserBattleStatsTable = pgTable(
       .$defaultFn(() => generateId("stats")).$type<StatsId>(),
     userId: varchar("user_id", { length: 255 })
       .notNull()
-      .$type<UserId>(),
+      .$type<UserId>()
+      .references(() => users.id),
     wins: integer("wins").notNull().default(0),
     losses: integer("losses").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -101,14 +105,16 @@ export const UserBattleStatsTable = pgTable(
   })
 );
 
-// Add to your existing robotBattle.db.ts
-export const battleRoomStatusEnum = pgEnum("battle_room_status", [
-  "WAITING", // Room created, waiting for opponent
-  "READY", // Both players joined, ready to start
-  "IN_PROGRESS", // Battle is ongoing
-  "COMPLETED", // Battle finished
-  "EXPIRED", // Room timed out without opponent
-]);
+export const BATTLE_ROOM_STATUSES = [
+  "WAITING",
+  "READY",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "EXPIRED",
+] as const;
+
+export const battleRoomStatusEnum = pgEnum("battle_room_status", BATTLE_ROOM_STATUSES);
+export const BattleRoomStatus = z.enum(BATTLE_ROOM_STATUSES);
 
 export const BattleRoomTable = pgTable("battle_rooms", {
   id: varchar("id", { length: 255 })

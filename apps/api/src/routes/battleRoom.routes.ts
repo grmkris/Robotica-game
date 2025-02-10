@@ -1,10 +1,11 @@
 import type { db } from "@/db/db";
 import {
+  BattleRobotsTable,
   BattleRoomTable,
   BattleTable
 } from "@/db/schema/robotBattle.db";
 import { validateUser } from "@/routes/helpers";
-import { simulateBattle } from "@/routes/robotBattle/robotBattleRoute";
+import { resolveBattle } from "@/routes/robotBattle/robotBattler";
 import type { ContextVariables } from "@/types";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { Logger } from "cat-logger";
@@ -28,8 +29,7 @@ const BattleRoomSchema = z.object({
 
 // Helper function to start battle
 async function startBattle(
-  robot1Id: RobotId,
-  robot2Id: RobotId,
+  robots: RobotId[],
   db: db,
   logger: Logger
 ) {
@@ -38,15 +38,21 @@ async function startBattle(
     .insert(BattleTable)
     .values({
       id: battleId,
-      robot1Id,
-      robot2Id,
       status: "IN_PROGRESS",
       startedAt: new Date(),
     })
     .returning();
 
+  // Insert battle robots
+  await db.insert(BattleRobotsTable).values(robots.map((robot) => ({
+    battleId,
+    robotId: robot,
+    id: generateId("battleRobot"),
+    createdAt: new Date(),
+  })));
+
   // Start battle simulation in background
-  void simulateBattle(battle.id, robot1Id, robot2Id, db, logger);
+  void resolveBattle({ battleId, db, logger });
 
   return battle;
 }
@@ -216,8 +222,7 @@ export const joinBattleRoomRoute = new OpenAPIHono<{
       }
 
       const battle = await startBattle(
-        room.robot1Id,
-        room.robot2Id,
+        [room.robot1Id, room.robot2Id],
         db,
         logger
       );

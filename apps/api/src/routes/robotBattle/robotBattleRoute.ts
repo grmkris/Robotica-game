@@ -1,21 +1,20 @@
-import type { db } from "@/db/db";
 import {
-  BattleRoundsTable,
+  BattleRobotsTable,
   BattleTable,
   RobotTable,
-  UserBattleStatsTable,
+  UserBattleStatsTable
 } from "@/db/schema/robotBattle.db";
 import { env } from "@/env";
 import { validateUser } from "@/routes/helpers";
+import { resolveBattle } from "@/routes/robotBattle/robotBattler";
 import type { ContextVariables } from "@/types";
-import type { Robot, RoundDamageResult } from "@/types/robotBattle.types";
 import { BATTLE_STATUS } from "@/types/robotBattle.types";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { LiteralClient } from "@literalai/client";
 import { executeStepStructured } from "cat-ai";
 import type { Logger } from "cat-logger";
 import { createMediaGenClient } from "cat-media-gen";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { BattleId, RobotId, type UserId, generateId } from "robot-sdk";
 import { battleRoomRoutes } from "../battleRoom.routes";
@@ -297,14 +296,19 @@ export const startBattleRoute = new OpenAPIHono<{
         .insert(BattleTable)
         .values({
           id: battleId,
-          robot1Id: robot1Id,
-          robot2Id: robot2Id,
           status: "IN_PROGRESS",
         })
         .returning();
 
+
+      // Insert battle robots
+      await db.insert(BattleRobotsTable).values([
+        { id: generateId("battleRobot"), battleId, robotId: robot1Id },
+        { id: generateId("battleRobot"), battleId, robotId: robot2Id },
+      ]);
+
       // Start battle simulation in background
-      void simulateBattle(battle.id, robot1Id, robot2Id, db, logger);
+      void resolveBattle({ battleId, db, logger });
 
       return c.json({ battleId: battle.id });
     } catch (error) {
@@ -420,31 +424,6 @@ export const getUserRobotsRoute = new OpenAPIHono<{
   }
 );
 
-// Helper function to update user battle stats
-async function updateUserBattleStats(
-  db: db,
-  robot1: Robot,
-  robot2: Robot,
-  winnerId: RobotId
-) {
-  const [winner, loser] =
-    winnerId === robot1.id ? [robot1, robot2] : [robot2, robot1];
-
-  await db.transaction(async (tx: db) => {
-    // Update winner stats
-    await tx
-      .update(UserBattleStatsTable)
-      .set({ wins: sql`wins + 1` })
-      .where(eq(UserBattleStatsTable.userId, winner.createdBy as UserId));
-
-    // Update loser stats
-    await tx
-      .update(UserBattleStatsTable)
-      .set({ losses: sql`losses + 1` })
-      .where(eq(UserBattleStatsTable.userId, loser.createdBy as UserId));
-  });
-}
-
 
 // Select Robot Route
 export const selectRobotRoute = new OpenAPIHono<{
@@ -518,138 +497,6 @@ export const selectRobotRoute = new OpenAPIHono<{
     });
   }
 );
-
-// Add new interfaces for damage tracking
-interface DamageEffect extends RoundDamageResult {
-  roundInflicted: number;
-}
-
-interface RobotDamageState {
-  mobility: DamageEffect[];
-  weapons: DamageEffect[];
-  structural: DamageEffect[];
-  power: DamageEffect[];
-}
-
-interface BattleContext {
-  robot1Damage: RobotDamageState;
-  robot2Damage: RobotDamageState;
-  previousRoundSummary?: string;
-}
-
-interface BattleRoundResult {
-  description: string;
-  winner: "robot1" | "robot2";
-  tacticalAnalysis: string;
-  inflictedDamage: {
-    robot1: RoundDamageResult[];
-    robot2: RoundDamageResult[];
-  };
-}
-
-// Update the simulateBattle function
-export async function simulateBattle(
-  battleId: BattleId,
-  robot1Id: RobotId,
-  robot2Id: RobotId,
-  db: db,
-  logger: Logger
-) {
-  try {
-    const robot1 = await db.query.RobotTable.findFirst({
-      where: eq(RobotTable.id, robot1Id),
-    });
-    const robot2 = await db.query.RobotTable.findFirst({
-      where: eq(RobotTable.id, robot2Id),
-    });
-
-    if (!robot1 || !robot2) {
-      throw new Error(`One or both robots not found: ${robot1Id}, ${robot2Id}`);
-    }
-
-    // Initialize battle context
-    const battleContext: BattleContext = {
-      robot1Damage: {
-        mobility: [],
-        weapons: [],
-        structural: [],
-        power: [],
-      },
-      robot2Damage: {
-        mobility: [],
-        weapons: [],
-        structural: [],
-        power: [],
-      },
-    };
-
-    // Simulate 3 rounds
-    for (let roundNumber = 1; roundNumber <= 3; roundNumber++) {
-      const roundResult = await literalClient
-        .run({
-          input: {
-            robot1,
-            robot2,
-            battleContext,
-            roundNumber,
-          },
-          name: `Simulate Battle Round ${roundNumber}`,
-          metadata: {
-            battleId,
-            roundNumber,
-            operation: "battle_simulation",
-          },
-        })
-        .wrap(async () => {
-          return await executeStepStructured<typeof BattleRoundSchema>({
-            stepName: `battle_round_${roundNumber}`,
-            input: JSON.stringify({ robot1, robot2, battleContext }), // generate better prompt instead of JSON.stringify
-            system: `You are simulating a battle between two robots. Consider their capabilities, 
-                    current damage state, and previous round results to generate an engaging and 
-                    tactically sound battle narrative.`,
-            logger,
-            providerConfig: {
-              apikey: env.GOOGLE_GEMINI_API_KEY,
-              modelId: "gemini-2.0-flash-exp",
-              provider: "google",
-            },
-            literalClient,
-            stepId: `battle_round_${roundNumber}`,
-            output: {
-              outputSchema: BattleRoundSchema,
-              schemaDescription: "The battle round results",
-              schemaName: "BattleRound",
-              temperature: 0.7,
-            },
-          });
-        });
-
-      // each round should store in db its steps...
-      // Update battle context with new damage
-      // updateBattleContext(battleContext, roundResult, roundNumber);
-
-      // Store round results in database
-      await db.insert(BattleRoundsTable).values({
-        battleId: battleId,
-        roundNumber,
-        description: roundResult.description,
-        winner: roundResult.winner,
-        tacticalAnalysis: roundResult.tacticalAnalysis,
-        damageReport: roundResult.inflictedDamage,
-      });
-    }
-
-    // Determine battle winner and update stats
-    const battleWinner = determineBattleWinner(battleContext);
-    await updateBattleResults(db, battleId, battleWinner, robot1, robot2);
-
-  } catch (error) {
-    logger.error("Battle simulation failed", { error });
-    await handleBattleError(db, battleId, error);
-    throw error;
-  }
-}
-
 
 // Combine all routes
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
