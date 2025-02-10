@@ -14,9 +14,9 @@ import { LiteralClient } from "@literalai/client";
 import { executeStepStructured } from "cat-ai";
 import type { Logger } from "cat-logger";
 import { eq } from "drizzle-orm";
-import { type BattleId, RobotId } from "robot-sdk";
+import type { BattleId } from "robot-sdk";
+import { RobotId } from "robot-sdk";
 import { z } from "zod";
-
 /**
  * Battle requirements:
  * - Battle can have 2 or more robots
@@ -32,30 +32,24 @@ const literalClient = new LiteralClient({
   apiKey: env.LITERAL_AI_API_KEY,
 });
 
-// Define our schemas
-const DamageSchema = z.object({
-  amount: z.number(),
-  type: z.string(),
-  description: z.string(),
-});
-
 const RobotStateSchema = z.object({
-  robotId: RobotId,
+  robotId: z.string(),
   currentHealth: z.number(),
   isAlive: z.boolean(),
   status: z.array(z.string()), // For effects like "damaged armor", "weapon malfunction" etc
 });
 
+const BattleActionSchema = z.object({
+  attackerId: z.string(),
+  defenderId: z.string(),
+  damage: z.number(),
+  description: z.string(),
+});
+
 const BattleRoundSchema = z.object({
   roundNumber: z.number(),
   narrative: z.string(),
-  damages: z.array(
-    z.object({
-      attackerId: RobotId,
-      defenderId: RobotId,
-      damage: DamageSchema,
-    }),
-  ),
+  actions: z.array(BattleActionSchema),
   tacticalAnalysis: z.string(),
 });
 
@@ -116,7 +110,7 @@ export const _resolveBattle = async (props: {
   await db
     .update(BattleTable)
     .set({
-      winnerId: winner.robotId,
+      winnerId: RobotId.parse(winner.robotId),
       status: "COMPLETED",
       completedAt: new Date(),
     })
@@ -156,7 +150,7 @@ const processRound = async (props: {
   logger: Logger;
 }) => {
   const { battleId, roundNumber, robotStates, db, logger } = props;
-  const threadId = `battle-${battleId}-round-${roundNumber}`;
+  const threadId = `battle-${battleId}`;
 
   return literalClient
     .thread({
@@ -213,11 +207,11 @@ const processRound = async (props: {
         })
         .wrap(async () => {
           // Apply damages to robot states
-          for (const { defenderId, damage } of roundResult.damages) {
-            const state = robotStates.get(defenderId);
+          for (const action of roundResult.actions) {
+            const state = robotStates.get(action.defenderId);
             if (state?.isAlive) {
-              state.currentHealth -= damage.amount;
-              state.status.push(damage.description);
+              state.currentHealth -= action.damage;
+              state.status.push(action.description);
               if (state.currentHealth <= 0) {
                 state.isAlive = false;
                 state.status.push("ELIMINATED");
@@ -258,11 +252,10 @@ ${Array.from(robotStates.values())
       )
       .join("\n")}
 
-Generate an exciting and tactical battle round. Consider:
-- Each robot's current health and status
-- Realistic combat tactics and strategy
-- Dramatic but believable outcomes
-- Detailed damage descriptions
+Generate an exciting battle round with clear outcomes. For each attack:
+1. Choose which robot attacks which other robot
+2. Determine a realistic damage amount (1-30)
+3. Write a brief but vivid description of what happened
 
-Provide specific damage amounts and effects that will impact the next round.`;
+Keep the narrative exciting but focused on the key actions.`;
 };
