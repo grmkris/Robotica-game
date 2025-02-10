@@ -8,9 +8,10 @@ import {
   varchar
 } from "drizzle-orm/pg-core";
 import type { BattleId, BattleRobotId, RobotId, RoundId, StatsId, UserId } from "robot-sdk";
-import { type RoomId, generateId } from "robot-sdk";
+import { generateId } from "robot-sdk";
 import { z } from "zod";
 import { users } from "./users.db";
+
 // Update the robot classes to be more descriptive
 export const ROBOT_CLASSES = [
   "ASSAULT",
@@ -103,9 +104,7 @@ export const UserBattleStatsTable = pgTable(
       .$type<RobotId>()
       .references(() => RobotTable.id),
   },
-  (table) => ({
-    userIdIdx: uniqueIndex("user_battle_stats_user_id_idx").on(table.userId),
-  })
+  (table) => ([uniqueIndex("user_battle_stats_user_id_idx").on(table.userId)])
 );
 
 export const BATTLE_ROOM_STATUSES = [
@@ -118,32 +117,3 @@ export const BATTLE_ROOM_STATUSES = [
 
 export const battleRoomStatusEnum = pgEnum("battle_room_status", BATTLE_ROOM_STATUSES);
 export const BattleRoomStatus = z.enum(BATTLE_ROOM_STATUSES);
-
-export const BattleRoomTable = pgTable("battle_rooms", {
-  id: varchar("id", { length: 255 })
-    .primaryKey()
-    .$type<RoomId>()
-    .$defaultFn(() => generateId("room")),
-  robot1Id: varchar("robot1_id", { length: 255 })
-    .notNull()
-    .$type<RobotId>()
-    .references(() => RobotTable.id),
-  robot2Id: varchar("robot2_id", { length: 255 })
-    .$type<RobotId>()
-    .references(() => RobotTable.id),
-  status: battleRoomStatusEnum("status").notNull().default("WAITING"),
-  createdBy: varchar("created_by", { length: 255 })
-    .notNull()
-    .$type<UserId>()
-    .references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
-    .defaultNow()
-    .notNull(),
-  expiresAt: timestamp("expires_at", {
-    withTimezone: true,
-    mode: "date",
-  }).notNull(),
-  battleId: varchar("battle_id", { length: 255 }).references(
-    () => BattleTable.id
-  ),
-});
