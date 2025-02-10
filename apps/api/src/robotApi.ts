@@ -4,9 +4,9 @@ import { robotBattleApp } from "@/routes/robotBattle/robotBattleRoute";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { apiReference } from "@scalar/hono-api-reference";
 import type { Logger } from "cat-logger";
-import { CAT_SERVICE_URLS } from "cat-sdk";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
+import { ROBOT_SERVICE_URLS } from "robot-sdk";
 import { authMiddleware } from "./authMiddleware";
 
 export const createRobotApi = async (props: { logger: Logger }) => {
@@ -35,7 +35,7 @@ export const createRobotApi = async (props: { logger: Logger }) => {
 		.use(
 			cors({
 				credentials: true,
-				origin: CAT_SERVICE_URLS[env.ENVIRONMENT].frontend,
+				origin: ROBOT_SERVICE_URLS[env.ENVIRONMENT].frontend,
 			}),
 		)
 		.use(authMiddleware)

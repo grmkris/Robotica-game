@@ -22,7 +22,6 @@
     "@openrouter/ai-sdk-provider": "^0.0.6",
     "ai": "^4.1.11",
     "cat-logger": "workspace:*",
-    "cat-sdk": "workspace:*",
     "minio": "^8.0.4",
     "nanoid": "^5.0.9",
     "zod": "^3.24.1",

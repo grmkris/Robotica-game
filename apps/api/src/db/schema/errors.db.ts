@@ -1,7 +1,7 @@
-import { type Entity, ErrorId, generateId } from "cat-sdk";
 import { sql } from "drizzle-orm";
 import { jsonb, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { type Entity, ErrorId, generateId } from "robot-sdk";
 import { z } from "zod";
 
 // Error logs section

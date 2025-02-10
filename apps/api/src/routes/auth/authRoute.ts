@@ -15,7 +15,6 @@ import { verifyHash } from "./authService";
 
 import { env } from "@/env";
 import { hashPassword } from "@/routes/auth/authService";
-import { CAT_SERVICE_URLS, type WalletChainId } from "cat-sdk";
 import { createPublicClient, http } from "viem";
 import { base, baseSepolia } from "viem/chains";
 import { generateSiweNonce, parseSiweMessage } from "viem/siwe";

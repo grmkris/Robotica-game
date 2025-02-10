@@ -1,4 +1,4 @@
-import { Environment } from "cat-sdk";
+import { Environment } from "robot-sdk";
 import { parseEnv } from "znv";
 import { z } from "zod";
 

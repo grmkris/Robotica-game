@@ -8,31 +8,22 @@ import {
 	users,
 	wallets,
 } from "@/db/schema/users.db";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import {
-	EvmAddress,
 	ItemId,
 	UserId,
 	UserItemId,
-	WalletChainId,
-	WalletType
-} from "cat-sdk";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+} from "robot-sdk";
 import { z } from "zod";
 
 export const SelectWalletSchema = createSelectSchema(wallets, {
 	userId: UserId,
-	type: WalletType,
-	chainId: WalletChainId,
-	address: EvmAddress,
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),
 });
 
 export const InsertWalletSchema = createInsertSchema(wallets, {
 	userId: UserId,
-	chainId: WalletChainId,
-	address: EvmAddress,
-	type: WalletType,
 }).omit({
 	id: true,
 	createdAt: true,

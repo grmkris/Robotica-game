@@ -3,9 +3,9 @@ import { getDb } from "@/db/db";
 import { env } from "@/env";
 import { logger } from "@/logger";
 import type { ContextVariables } from "@/types";
-import { CAT_SERVICE_URLS } from "cat-sdk";
 import { getCookie, setCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
+import { ROBOT_SERVICE_URLS } from "robot-sdk";
 
 export const authMiddleware = createMiddleware<{ Variables: ContextVariables }>(
 	async (c, next) => {
@@ -18,7 +18,7 @@ export const authMiddleware = createMiddleware<{ Variables: ContextVariables }>(
 		c.set("db", db);
 
 		// Add CORS headers first
-		const origin = CAT_SERVICE_URLS[env.ENVIRONMENT].frontend;
+		const origin = ROBOT_SERVICE_URLS[env.ENVIRONMENT].frontend;
 
 		c.res.headers.set("Access-Control-Allow-Credentials", "true");
 		c.res.headers.set("Access-Control-Allow-Origin", origin);
@@ -58,7 +58,7 @@ export const authMiddleware = createMiddleware<{ Variables: ContextVariables }>(
 					secure: process.env.NODE_ENV === "production",
 					sameSite: "Lax",
 					path: "/",
-					domain: CAT_SERVICE_URLS[env.ENVIRONMENT].frontend,
+					domain: ROBOT_SERVICE_URLS[env.ENVIRONMENT].frontend,
 					maxAge: 60 * 60 * 24 * 30, // 30 days
 				});
 			}
@@ -70,7 +70,7 @@ export const authMiddleware = createMiddleware<{ Variables: ContextVariables }>(
 					secure: process.env.NODE_ENV === "production",
 					sameSite: "Lax",
 					path: "/",
-					domain: CAT_SERVICE_URLS[env.ENVIRONMENT].frontend,
+					domain: ROBOT_SERVICE_URLS[env.ENVIRONMENT].frontend,
 					maxAge: 0,
 				});
 				c.set("user", null);
