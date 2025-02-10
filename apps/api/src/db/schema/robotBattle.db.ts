@@ -22,11 +22,9 @@ export const ROBOT_CLASSES = [
 ] as const;
 
 export const robotClassEnum = pgEnum("robot_class", ROBOT_CLASSES);
-export const battleStatusEnum = pgEnum("battle_status", [
-  "IN_PROGRESS",
-  "COMPLETED",
-  "CANCELLED",
-]);
+export const BATTLE_STATUS = ["WAITING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
+export const BattleStatus = z.enum(BATTLE_STATUS);
+export const battleStatusEnum = pgEnum("battle_status", BATTLE_STATUS);
 
 // Robot table
 export const RobotTable = pgTable("robots", {

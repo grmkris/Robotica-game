@@ -1,12 +1,8 @@
+import { BattleStatus } from "@/db/schema/robotBattle.db";
 import { UserId } from "cat-sdk";
 import { BattleId, RobotId, RoundId } from "robot-sdk";
 import { z } from "zod";
 
-
-
-// Battle Status
-export const BATTLE_STATUS = ["IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
-export type BattleStatus = (typeof BATTLE_STATUS)[number];
 
 // Zod Schemas
 export const RobotSchema = z.object({
@@ -16,17 +12,17 @@ export const RobotSchema = z.object({
   prompt: z.string(),
   imageUrl: z.string().optional(),
   createdBy: UserId,
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
 });
 
 export const BattleSchema = z.object({
   id: BattleId,
   robot1Id: RobotId,
   robot2Id: RobotId,
-  status: z.enum(BATTLE_STATUS),
+  status: BattleStatus,
   winnerId: RobotId.optional(),
-  startedAt: z.date(),
-  completedAt: z.date().optional(),
+  startedAt: z.coerce.date(),
+  completedAt: z.coerce.date().optional(),
 });
 
 export const BattleRoundSchema = z.object({

@@ -1,14 +1,15 @@
 import {
   BattleRobotsTable,
+  BattleStatus,
   BattleTable,
   RobotTable,
   UserBattleStatsTable
 } from "@/db/schema/robotBattle.db";
+import { users } from "@/db/schema/users.db";
 import { env } from "@/env";
 import { validateUser } from "@/routes/helpers";
 import { resolveBattle } from "@/routes/robotBattle/robotBattler";
 import type { ContextVariables } from "@/types";
-import { BATTLE_STATUS } from "@/types/robotBattle.types";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { LiteralClient } from "@literalai/client";
 import { executeStepStructured } from "cat-ai";
@@ -17,23 +18,6 @@ import { createMediaGenClient } from "cat-media-gen";
 import { and, desc, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { BattleId, RobotId, type UserId, generateId } from "robot-sdk";
-import { battleRoomRoutes } from "../battleRoom.routes";
-
-const determineBattleWinner = () => {
-  // TODO: Implement this
-  throw new Error("Not implemented");
-}
-
-const handleBattleError = () => {
-  // TODO: Implement this
-  throw new Error("Not implemented");
-}
-
-const updateBattleResults = () => {
-  // TODO: Implement this
-  throw new Error("Not implemented");
-}
-
 // Define Zod schemas for validation
 const RobotIdSchema = RobotId;
 const BattleIdSchema = BattleId;
@@ -321,6 +305,144 @@ export const startBattleRoute = new OpenAPIHono<{
   }
 );
 
+export const createBattleRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "post",
+    path: "create-battle",
+    tags: ["RobotBattle"],
+    summary: "Create a new battle",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              robot1Id: RobotIdSchema
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Battle created successfully",
+        content: {
+          "application/json": {
+            schema: z.object({
+              battleId: BattleIdSchema,
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const body = await c.req.json();
+    const { robot1Id } = body;
+    const db = c.get("db");
+    const logger = c.get("logger");
+
+    try {
+      // Validate that robot exists
+      const robot1 = await db.query.RobotTable.findFirst({
+        where: and(
+          eq(RobotTable.id, robot1Id),
+          eq(RobotTable.createdBy, users.id)
+        ),
+      });
+
+      if (!robot1) {
+        throw new HTTPException(404, { message: "Robot not found" });
+      }
+
+      // Create battle
+      const battleId = generateId("battle");
+      const [battle] = await db
+        .insert(BattleTable)
+        .values({ id: battleId, status: "IN_PROGRESS" })
+        .returning();
+
+      // Insert battle robot
+      await db.insert(BattleRobotsTable).values({
+        id: generateId("battleRobot"),
+        battleId,
+        robotId: robot1Id,
+      });
+
+      return c.json({ battleId: battle.id }); // Replace with actual battle creation
+    } catch (error) {
+      logger.error("Failed to create battle", { error });
+      if (error instanceof HTTPException) {
+        throw error;
+      }
+      throw new HTTPException(500, { message: "Failed to create battle" });
+    }
+  }
+);
+
+const joinBattleRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "post",
+    path: "join-battle",
+    tags: ["RobotBattle"],
+    summary: "Join a battle",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              battleId: BattleIdSchema,
+              robotId: RobotIdSchema,
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Successfully joined battle",
+        content: {
+          "application/json": {
+            schema: z.object({
+              success: z.boolean(),
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const body = await c.req.json();
+    const { battleId, robotId } = body;
+    const db = c.get("db");
+    const logger = c.get("logger");
+
+    // Add join battle logic here...
+    const battle = await db.query.BattleTable.findFirst({
+      where: eq(BattleTable.id, battleId),
+    });
+
+    if (!battle) {
+      throw new HTTPException(404, { message: "Battle not found" });
+    }
+
+    // Insert battle robot
+    await db.insert(BattleRobotsTable).values({
+      id: generateId("battleRobot"),
+      battleId,
+      robotId: robotId,
+    });
+
+    // start battle simulation in background
+    void resolveBattle({ battleId, db, logger });
+
+    return c.json({ success: true });
+  }
+);
+
 // Get Battle Status Route
 export const getBattleStatusRoute = new OpenAPIHono<{
   Variables: ContextVariables;
@@ -341,7 +463,7 @@ export const getBattleStatusRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              status: z.enum(BATTLE_STATUS),
+              status: BattleStatus,
               rounds: z.array(
                 z.object({
                   roundNumber: z.number(),
@@ -501,8 +623,9 @@ export const selectRobotRoute = new OpenAPIHono<{
 // Combine all routes
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   .route("/", createRobotRoute)
+  .route("/", createBattleRoute)
+  .route("/", joinBattleRoute)
   .route("/", startBattleRoute)
   .route("/", getBattleStatusRoute)
   .route("/", getUserRobotsRoute)
   .route("/", selectRobotRoute)
-  .route("/", battleRoomRoutes);
