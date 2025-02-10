@@ -3,7 +3,6 @@ import { emailVerificationCodes } from "@/db/schema/users.db";
 import { Template as ConfirmationCode } from "@/emails/confirmation-code";
 import { env } from "@/env";
 import { hash, verify } from "@node-rs/argon2";
-import type { UserId } from "cat-sdk";
 import { eq } from "drizzle-orm";
 import { render } from "jsx-email";
 import { createTransport } from "nodemailer";
@@ -11,6 +10,7 @@ import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { TimeSpan, createDate, isWithinExpirationDate } from "oslo";
 import { alphabet, generateRandomString } from "oslo/crypto";
 import { Resend } from "resend";
+import type { UserId } from "robot-sdk";
 
 export async function sendVerificationCode(emailAddress: string, code: string) {
 	if (env.EMAIL_PROVIDER === "console") {
@@ -115,9 +115,9 @@ function getSmtpTransporter() {
 		new SMTPTransport({
 			auth: requiresAuth
 				? {
-						user: env.SMTP_USERNAME,
-						pass: env.SMTP_PASSWORD,
-					}
+					user: env.SMTP_USERNAME,
+					pass: env.SMTP_PASSWORD,
+				}
 				: undefined,
 			host: env.SMTP_HOST,
 			port: env.SMTP_PORT,

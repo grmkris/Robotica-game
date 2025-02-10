@@ -6,7 +6,6 @@ import type { ContextVariables } from "@/types";
 import { CAT_SERVICE_URLS } from "cat-sdk";
 import { getCookie, setCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
-import { getQueueServices } from "./queue/queueSingleton";
 
 export const authMiddleware = createMiddleware<{ Variables: ContextVariables }>(
 	async (c, next) => {
@@ -15,10 +14,8 @@ export const authMiddleware = createMiddleware<{ Variables: ContextVariables }>(
 		});
 		c.set("logger", childLogger);
 		const db = getDb();
-		const queueServices = getQueueServices();
 
 		c.set("db", db);
-		c.set("queueServices", queueServices);
 
 		// Add CORS headers first
 		const origin = CAT_SERVICE_URLS[env.ENVIRONMENT].frontend;

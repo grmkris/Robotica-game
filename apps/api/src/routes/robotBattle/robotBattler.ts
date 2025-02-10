@@ -108,7 +108,6 @@ export const _resolveBattle = async (props: {
           robotStates,
           db,
           logger,
-          threadId,
         });
         roundNumber++;
       }
@@ -159,9 +158,8 @@ const processRound = async (props: {
   robotStates: Map<string, RobotState>;
   db: db;
   logger: Logger;
-  threadId: string;
 }) => {
-  const { battleId, roundNumber, robotStates, db, logger, threadId } = props;
+  const { battleId, roundNumber, robotStates, db, logger } = props;
 
   // Simulate the round
   const roundResult = await literalClient

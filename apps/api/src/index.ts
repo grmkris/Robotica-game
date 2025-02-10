@@ -1,9 +1,5 @@
 import { getDb, getPgClient } from "@/db/db";
 import { logger } from "@/logger";
-import {
-	closeQueueServices,
-	initializeQueueServices,
-} from "@/queue/queueSingleton";
 import { createRobotApi } from "@/robotApi";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { Hono } from "hono";
@@ -16,11 +12,6 @@ const initApp = async () => {
 	logger.info("Migrating database...");
 	await migrate(getDb(), { migrationsFolder: "drizzle" });
 	logger.info("Database migrated successfully");
-
-	// Initialize queue services
-	logger.info("Initializing queue services...");
-	await initializeQueueServices();
-	logger.info("Queue services initialized successfully");
 
 	logger.info("Initializing Robot Battle API...");
 	const robotApi = await createRobotApi({ logger });
@@ -38,7 +29,6 @@ const app = await initApp();
 // Handle graceful shutdown
 const shutdown = async () => {
 	logger.info("Shutting down...");
-	await closeQueueServices();
 
 	const pgClient = getPgClient();
 	if (pgClient) {

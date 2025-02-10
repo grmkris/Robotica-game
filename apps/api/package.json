@@ -8,7 +8,7 @@
     "check": "pnpm biome check src",
     "check:knip": "bunx --bun knip",
     "typecheck": "tsc --noEmit",
-    "type:generate": "rm -rf generated_types && tsc --project tsconfig.types.json && mv ./generated_types/catApi.d.ts ../front/src/api.d.ts && rm -rf generated_types",
+    "type:generate": "rm -rf generated_types && tsc --project tsconfig.types.json && mv ./generated_types/robotApi.d.ts ../front/src/api.d.ts && rm -rf generated_types",
     "db:start": "docker compose -f postgres.yml up -d",
     "db:stop": "docker compose -f postgres.yml down",
     "db:clean": "docker compose -f postgres.yml down -v",

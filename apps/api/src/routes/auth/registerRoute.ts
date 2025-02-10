@@ -1,4 +1,4 @@
-import { UserId } from "cat-sdk";
+import { UserId } from "robot-sdk";
 import {
 	generateEmailVerificationCode,
 	sendVerificationCode,
