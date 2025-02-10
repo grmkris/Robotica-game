@@ -52,6 +52,46 @@ export const apiClient = {
       if (!endpoint) throw new Error("Endpoint not found");
       return endpoint.$post({ json: { robotId } });
     },
+    listRooms: () =>
+      fetch(`${API_URL}/robot-battle/list`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      }),
+    createRoom: (robotId: string) =>
+      fetch(`${API_URL}/robot-battle/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ robotId }),
+        credentials: "include",
+      }),
+    joinRoom: ({ roomId, robotId }: { roomId: string; robotId: string }) =>
+      fetch(`${API_URL}/robot-battle/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ roomId, robotId }),
+        credentials: "include",
+      }),
+    getRoomEvents: (roomId: string) => {
+      const eventSource = new EventSource(
+        `${API_URL}/robot-battle/events/${roomId}`,
+      );
+      return eventSource;
+    },
+    getBattleStatus: (battleId: string) =>
+      fetch(`${API_URL}/robot-battle/battle-status?battleId=${battleId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      }),
   },
 
   auth: {
@@ -112,3 +152,13 @@ export const apiClient = {
     },
   },
 };
+
+// Add type definitions
+declare module "@/lib/apiClient" {
+  interface RobotBattleAPI {
+    listRooms(): Promise<Response>;
+    createRoom(robotId: string): Promise<Response>;
+    joinRoom(params: { roomId: string; robotId: string }): Promise<Response>;
+    getRoomEvents(roomId: string): EventSource;
+  }
+}

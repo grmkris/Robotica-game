@@ -66,6 +66,7 @@ export const battleRoomRoutes = new OpenAPIHono<{
             "application/json": {
               schema: z.object({
                 roomId: z.string(),
+                battleId: z.string().nullable(),
               }),
             },
           },
@@ -76,6 +77,20 @@ export const battleRoomRoutes = new OpenAPIHono<{
       const { robotId } = c.req.valid("json");
       const user = validateUser(c);
       const db = c.get("db");
+
+      const existingRoom = await db
+        .select()
+        .from(BattleRoomTable)
+        .where(
+          sql`robot1_id = ${robotId} AND status = 'WAITING' AND expires_at > NOW()`
+        )
+        .limit(1);
+
+      if (existingRoom.length > 0) {
+        throw new Error(
+          "You already have an active battle room with this robot"
+        );
+      }
 
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
@@ -89,7 +104,7 @@ export const battleRoomRoutes = new OpenAPIHono<{
         })
         .returning();
 
-      return c.json({ roomId: room.id });
+      return c.json({ roomId: room.id, battleId: null });
     }
   )
   .openapi(
@@ -153,6 +168,7 @@ export const battleRoomRoutes = new OpenAPIHono<{
             "application/json": {
               schema: z.object({
                 status: z.literal("READY"),
+                battleId: z.string(),
               }),
             },
           },
@@ -162,6 +178,7 @@ export const battleRoomRoutes = new OpenAPIHono<{
     async (c) => {
       const { roomId, robotId } = c.req.valid("json");
       const db = c.get("db");
+      let battleId: string; // Add this to store the battle ID
 
       const [room] = await db
         .update(BattleRoomTable)
@@ -191,6 +208,8 @@ export const battleRoomRoutes = new OpenAPIHono<{
           c.get("logger")
         );
 
+        battleId = battle.id; // Store the battle ID
+
         // Update room with battle ID
         await db
           .update(BattleRoomTable)
@@ -204,88 +223,116 @@ export const battleRoomRoutes = new OpenAPIHono<{
         throw new Error("Failed to start battle");
       }
 
-      return c.json({ status: "READY" as const });
+      return c.json({
+        status: "READY" as const,
+        battleId, // Use the stored battle ID
+      });
     }
   )
   .get("/events/:roomId", async (c) => {
     const roomId = c.req.param("roomId");
+    console.log("SSE connection established for room:", roomId);
 
-    // Set up SSE headers
-    c.header("Content-Type", "text/event-stream");
-    c.header("Cache-Control", "no-cache");
-    c.header("Connection", "keep-alive");
+    // Helper function to encode SSE message
+    const encoder = new TextEncoder();
+    const encodeMessage = (data: any) => {
+      return encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
+    };
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        const db = c.get("db");
+    return new Response(
+      new ReadableStream({
+        async start(controller) {
+          const db = c.get("db");
 
-        // Initial room state with battle info
-        const room = await db
-          .select({
-            room: BattleRoomTable,
-            battle: BattleTable,
-            rounds: BattleRoundsTable,
-          })
-          .from(BattleRoomTable)
-          .leftJoin(BattleTable, eq(BattleRoomTable.battleId, BattleTable.id))
-          .leftJoin(
-            BattleRoundsTable,
-            eq(BattleTable.id, BattleRoundsTable.battleId)
-          )
-          .where(sql`room.id = ${roomId}`)
-          .limit(1);
-
-        if (!room.length) {
-          controller.close();
-          return;
-        }
-
-        // Send initial state
-        controller.enqueue(`data: ${JSON.stringify(room[0])}\n\n`);
-
-        // Set up polling for updates
-        const interval = setInterval(async () => {
-          const updatedRoom = await db
-            .select({
-              room: BattleRoomTable,
-              battle: BattleTable,
-              rounds: BattleRoundsTable,
-            })
+          // Initial room state
+          const room = await db
+            .select()
             .from(BattleRoomTable)
-            .leftJoin(BattleTable, eq(BattleRoomTable.battleId, BattleTable.id))
-            .leftJoin(
-              BattleRoundsTable,
-              eq(BattleTable.id, BattleRoundsTable.battleId)
-            )
-            .where(sql`room.id = ${roomId}`)
+            .where(sql`id = ${roomId}`)
             .limit(1);
 
-          if (
-            !updatedRoom.length ||
-            updatedRoom[0].room.status === "COMPLETED" ||
-            updatedRoom[0].battle?.status === "COMPLETED"
-          ) {
-            clearInterval(interval);
+          if (!room.length) {
+            console.log("Room not found:", roomId);
             controller.close();
             return;
           }
 
-          controller.enqueue(`data: ${JSON.stringify(updatedRoom[0])}\n\n`);
-        }, 1000);
+          console.log("Sending initial room state:", room[0]);
+          controller.enqueue(encodeMessage({ room: room[0] }));
 
-        // Clean up on disconnect
-        c.req.raw.signal.addEventListener("abort", () => {
-          clearInterval(interval);
-          controller.close();
-        });
-      },
-    });
+          // Set up polling for updates
+          const interval = setInterval(async () => {
+            const updatedRoom = await db
+              .select()
+              .from(BattleRoomTable)
+              .where(sql`id = ${roomId}`)
+              .limit(1);
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
+            if (!updatedRoom.length) {
+              console.log("Room no longer exists:", roomId);
+              clearInterval(interval);
+              controller.close();
+              return;
+            }
+
+            console.log("Sending room update:", updatedRoom[0]);
+            controller.enqueue(encodeMessage({ room: updatedRoom[0] }));
+
+            if (updatedRoom[0].battleId) {
+              console.log("Battle started, closing SSE connection");
+              clearInterval(interval);
+              controller.close();
+            }
+          }, 1000);
+
+          // Clean up on disconnect
+          c.req.raw.signal.addEventListener("abort", () => {
+            console.log("Client disconnected, cleaning up");
+            clearInterval(interval);
+            controller.close();
+          });
+        },
+      }),
+      {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      }
+    );
+  })
+  .get("/battle-status", async (c) => {
+    const battleId = c.req.query("battleId");
+    if (!battleId?.startsWith("bat_")) {
+      throw new Error("Invalid battle ID format");
+    }
+
+    const db = c.get("db");
+    const typedBattleId = battleId as `bat_${string}`;
+
+    const battle = await db
+      .select({
+        battle: BattleTable,
+        rounds: BattleRoundsTable,
+      })
+      .from(BattleTable)
+      .leftJoin(
+        BattleRoundsTable,
+        eq(BattleTable.id, BattleRoundsTable.battleId)
+      )
+      .where(eq(BattleTable.id, typedBattleId))
+      .execute();
+
+    if (!battle.length) {
+      throw new Error("Battle not found");
+    }
+
+    // Format the response
+    const formattedBattle = {
+      ...battle[0].battle,
+      rounds: battle.map((b) => b.rounds).filter(Boolean),
+    };
+
+    return c.json(formattedBattle);
   });

@@ -12,6 +12,8 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { BattleRoomList } from "./battle/BattleRoomList";
+import { CreateBattleRoom } from "./battle/CreateBattleRoom";
 
 function UserRobots() {
   const queryClient = useQueryClient();
@@ -94,6 +96,23 @@ function UserRobots() {
 }
 
 export function ClientDashboard() {
+  const { data: robotData } = useQuery({
+    queryKey: ["userRobots"],
+    queryFn: async () => {
+      const response = await apiClient.robotBattle.getUserRobots();
+      const json = await response.json();
+      return json as {
+        robots: Array<{
+          id: string;
+          name: string;
+          description: string;
+          createdAt: string;
+        }>;
+        selectedRobotId: string | null;
+      };
+    },
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black">
       <div className="container mx-auto space-y-8 p-4">
@@ -115,6 +134,33 @@ export function ClientDashboard() {
 
         <section>
           <UserRobots />
+        </section>
+
+        {/* Add Battle Room Section */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="text-3xl font-bold text-cyan-400">Battle Arena</h2>
+              <p className="text-zinc-400">
+                Create or join battle rooms to fight other robots
+              </p>
+            </div>
+            <CreateBattleRoom
+              selectedRobotId={robotData?.selectedRobotId ?? null}
+            />
+          </div>
+
+          <div className="mt-6">
+            {robotData?.selectedRobotId ? (
+              <BattleRoomList selectedRobotId={robotData.selectedRobotId} />
+            ) : (
+              <div className="rounded-lg border border-dashed border-zinc-700 p-8 text-center">
+                <p className="text-zinc-400">
+                  Select a robot first to see available battle rooms
+                </p>
+              </div>
+            )}
+          </div>
         </section>
       </div>
     </div>
