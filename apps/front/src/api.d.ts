@@ -95,9 +95,9 @@ export declare const createRobotApi: (props: {
                 };
             };
             output: {
-                id: `usr${string}`;
-                createdAt: string;
+                id: `user${string}`;
                 createdBy: string | null;
+                createdAt: string;
                 username: string;
                 email: string | null;
                 normalizedEmail: string | null;
@@ -106,13 +106,11 @@ export declare const createRobotApi: (props: {
                 updatedBy: string | null;
                 purrlons: number;
                 wallets: {
-                    type: "ETHEREUM";
                     id: string;
                     createdAt: string;
                     updatedAt: string;
-                    userId: `usr${string}`;
-                    address: `0x${string}`;
-                    chainId: 1 | 137 | 11155111 | 42161 | 10 | 8453 | 84532;
+                    userId: `user${string}`;
+                    address: string;
                 }[];
                 name?: string | null | undefined;
             };
@@ -130,9 +128,9 @@ export declare const createRobotApi: (props: {
         } | {
             input: {};
             output: {
-                id: `usr${string}`;
-                createdAt: string;
+                id: `user${string}`;
                 createdBy: string | null;
+                createdAt: string;
                 username: string;
                 email: string | null;
                 normalizedEmail: string | null;
@@ -141,13 +139,11 @@ export declare const createRobotApi: (props: {
                 updatedBy: string | null;
                 purrlons: number;
                 wallets: {
-                    type: "ETHEREUM";
                     id: string;
                     createdAt: string;
                     updatedAt: string;
-                    userId: `usr${string}`;
-                    address: `0x${string}`;
-                    chainId: 1 | 137 | 11155111 | 42161 | 10 | 8453 | 84532;
+                    userId: `user${string}`;
+                    address: string;
                 }[];
                 name?: string | null | undefined;
             };
@@ -240,12 +236,12 @@ export declare const createRobotApi: (props: {
             };
             output: {
                 battles: {
-                    status: "COMPLETED" | "FAILED" | "IN_PROGRESS" | "CANCELLED" | "WAITING";
+                    status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "WAITING" | "FAILED";
                     id: `bat${string}`;
                     createdAt: string;
                     robots: {
-                        name: string;
                         id: `rob${string}`;
+                        name: string;
                         imageUrl?: string | null | undefined;
                     }[];
                 }[];
@@ -293,10 +289,10 @@ export declare const createRobotApi: (props: {
             output: {
                 robots: {
                     description: string;
-                    name: string;
                     id: `rob${string}`;
-                    createdAt: string;
+                    name: string;
                     prompt: string;
+                    createdAt: string;
                 }[];
                 selectedRobotId: `rob${string}` | null;
             };
@@ -313,7 +309,7 @@ export declare const createRobotApi: (props: {
                 };
             };
             output: {
-                status: "COMPLETED" | "FAILED" | "IN_PROGRESS" | "CANCELLED" | "WAITING";
+                status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "WAITING" | "FAILED";
                 rounds: {
                     description: string;
                     roundNumber: number;
@@ -380,8 +376,8 @@ export declare const createRobotApi: (props: {
             };
             output: {
                 description: string;
-                name: string;
                 id: `rob${string}`;
+                name: string;
                 prompt: string;
             };
             outputFormat: "json";

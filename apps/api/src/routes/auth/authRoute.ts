@@ -15,6 +15,7 @@ import { verifyHash } from "./authService";
 
 import { env } from "@/env";
 import { hashPassword } from "@/routes/auth/authService";
+import { ROBOT_SERVICE_URLS } from "robot-sdk";
 import { createPublicClient, http } from "viem";
 import { base, baseSepolia } from "viem/chains";
 import { generateSiweNonce, parseSiweMessage } from "viem/siwe";
@@ -99,7 +100,7 @@ export const siweVerify = new OpenAPIHono<{
 			logger.info({ msg: "Parsing SIWE message", message });
 			const siweMessage = parseSiweMessage(message);
 			const address = siweMessage.address;
-			const chainId = siweMessage.chainId as WalletChainId;
+			const chainId = siweMessage.chainId;
 			const network = chainId === base.id ? base : baseSepolia;
 			if (!chainId)
 				throw new HTTPException(401, { message: "Invalid signature" });
@@ -154,10 +155,7 @@ export const siweVerify = new OpenAPIHono<{
 
 				// if user is already logged in, but the wallet belongs to a different user, we need to throw an error
 				const otherUserWallet = await db.query.wallets.findFirst({
-					where: and(
-						eq(wallets.address, address),
-						eq(wallets.chainId, chainId),
-					),
+					where: eq(wallets.address, address),
 				});
 
 				if (otherUserWallet) {
@@ -176,8 +174,6 @@ export const siweVerify = new OpenAPIHono<{
 						.values({
 							userId: currentUser.id,
 							address,
-							chainId,
-							type: "ETHEREUM",
 						})
 						.returning();
 
@@ -203,7 +199,7 @@ export const siweVerify = new OpenAPIHono<{
 				chainId: siweMessage.chainId,
 			});
 			const walletUser = await db.query.wallets.findFirst({
-				where: and(eq(wallets.address, address), eq(wallets.chainId, chainId)),
+				where: eq(wallets.address, address),
 				with: {
 					user: true,
 				},
@@ -252,9 +248,7 @@ export const siweVerify = new OpenAPIHono<{
 						.insert(wallets)
 						.values({
 							userId: user.id,
-							address,
-							chainId,
-							type: "ETHEREUM",
+							address
 						})
 						.returning();
 
@@ -279,7 +273,7 @@ export const siweVerify = new OpenAPIHono<{
 				secure: process.env.NODE_ENV === "production",
 				httpOnly: true,
 				path: "/",
-				domain: CAT_SERVICE_URLS[env.ENVIRONMENT].cookieDomain,
+				domain: ROBOT_SERVICE_URLS[env.ENVIRONMENT].cookieDomain,
 				maxAge: 60 * 60 * 24 * 7, // 7 days
 			});
 
@@ -387,7 +381,7 @@ export const login = new OpenAPIHono<{ Variables: ContextVariables }>().openapi(
 			secure: process.env.NODE_ENV === "production",
 			httpOnly: true,
 			path: "/",
-			domain: CAT_SERVICE_URLS[env.ENVIRONMENT].cookieDomain,
+			domain: ROBOT_SERVICE_URLS[env.ENVIRONMENT].cookieDomain,
 			maxAge: 60 * 60 * 24 * 7, // 7 days
 		});
 

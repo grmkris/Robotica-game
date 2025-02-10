@@ -10,14 +10,17 @@ export const ROBOT_SERVICE_URLS: Record<
 	{
 		api: string;
 		frontend: string;
+		cookieDomain: string;
 	}
 > = {
 	dev: {
 		api: "http://localhost:3000",
 		frontend: "http://localhost:3002",
+		cookieDomain: "localhost",
 	},
 	prod: {
-		api: "https://api.robotica.com", // Replace with your actual production URL
-		frontend: "https://robotica.com", // Replace with your actual production URL
+		api: "https://api.robotica.com",
+		frontend: "https://robotica.com",
+		cookieDomain: "robotica.com",
 	},
 } as const;
