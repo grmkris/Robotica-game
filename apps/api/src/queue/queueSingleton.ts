@@ -1,10 +1,6 @@
 import { getDb } from "@/db/db";
 import { env } from "@/env";
-import { createBullBoard } from "@bull-board/api";
-import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
-import { HonoAdapter } from "@bull-board/hono";
-import { Queue, Worker } from "bullmq";
-import { Hono } from "hono";
+import { Queue } from "bullmq";
 
 let queueServices: {
   interactionQueue: Queue;
@@ -62,3 +58,6 @@ export async function closeQueueServices() {
     ]);
   }
 }
+
+
+export type QueueServices = Awaited<ReturnType<typeof initializeQueueServices>>;

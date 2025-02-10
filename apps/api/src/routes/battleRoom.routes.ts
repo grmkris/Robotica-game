@@ -1,32 +1,43 @@
-import { validateUser } from "@/auth";
 import type { db } from "@/db/db";
 import {
   BattleRoomTable,
-  BattleRoundsTable,
-  BattleTable,
+  BattleTable
 } from "@/db/schema/robotBattle.db";
+import { validateUser } from "@/routes/helpers";
 import { simulateBattle } from "@/routes/robotBattle/robotBattleRoute";
 import type { ContextVariables } from "@/types";
-import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { Logger } from "cat-logger";
 import { eq, sql } from "drizzle-orm";
-import { type RobotId, generateId } from "robot-sdk";
-import { z } from "zod";
+import { HTTPException } from "hono/http-exception";
+import { BattleId, RobotId, RoomId, UserId, generateId } from "robot-sdk";
 
-// Create a Zod schema for RobotId validation
-const RobotIdSchema = z.string().regex(/^rob_/);
 
-// Add this function near the top of the file after imports
+const JoinRoomSchema = z.object({
+  roomId: RoomId,
+  robotId: RobotId,
+});
+
+const BattleRoomSchema = z.object({
+  id: RoomId,
+  createdBy: UserId,
+  robot1Id: RobotId,
+  createdAt: z.string(),
+  expiresAt: z.string(),
+});
+
+// Helper function to start battle
 async function startBattle(
   robot1Id: RobotId,
   robot2Id: RobotId,
   db: db,
   logger: Logger
 ) {
+  const battleId = generateId("battle");
   const [battle] = await db
     .insert(BattleTable)
     .values({
-      id: generateId("battle"),
+      id: battleId,
       robot1Id,
       robot2Id,
       status: "IN_PROGRESS",
@@ -40,45 +51,46 @@ async function startBattle(
   return battle;
 }
 
-export const battleRoomRoutes = new OpenAPIHono<{
+// Create Battle Room Route
+export const createBattleRoomRoute = new OpenAPIHono<{
   Variables: ContextVariables;
-}>()
-  .openapi(
-    createRoute({
-      method: "post",
-      path: "/create",
-      tags: ["BattleRoom"],
-      summary: "Create a battle room",
-      request: {
-        body: {
-          content: {
-            "application/json": {
-              schema: z.object({
-                robotId: z.string().regex(/^rob_/),
-              }),
-            },
+}>().openapi(
+  createRoute({
+    method: "post",
+    path: "/create",
+    tags: ["BattleRoom"],
+    summary: "Create a battle room",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              robotId: RobotId,
+            }),
           },
         },
       },
-      responses: {
-        200: {
-          description: "Room created successfully",
-          content: {
-            "application/json": {
-              schema: z.object({
-                roomId: z.string(),
-                battleId: z.string().nullable(),
-              }),
-            },
+    },
+    responses: {
+      200: {
+        description: "Room created successfully",
+        content: {
+          "application/json": {
+            schema: z.object({
+              roomId: RoomId,
+              battleId: BattleId.nullable(),
+            }),
           },
         },
       },
-    }),
-    async (c) => {
-      const { robotId } = c.req.valid("json");
-      const user = validateUser(c);
-      const db = c.get("db");
+    },
+  }),
+  async (c) => {
+    const { robotId } = c.req.valid("json");
+    const user = validateUser(c);
+    const db = c.get("db");
 
+    try {
       const existingRoom = await db
         .select()
         .from(BattleRoomTable)
@@ -88,9 +100,9 @@ export const battleRoomRoutes = new OpenAPIHono<{
         .limit(1);
 
       if (existingRoom.length > 0) {
-        throw new Error(
-          "You already have an active battle room with this robot"
-        );
+        throw new HTTPException(400, {
+          message: "You already have an active battle room with this robot",
+        });
       }
 
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
@@ -106,81 +118,86 @@ export const battleRoomRoutes = new OpenAPIHono<{
         .returning();
 
       return c.json({ roomId: room.id, battleId: null });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      throw new HTTPException(500, { message: "Failed to create battle room" });
     }
-  )
-  .openapi(
-    createRoute({
-      method: "get",
-      path: "/list",
-      tags: ["BattleRoom"],
-      summary: "List available battle rooms",
-      responses: {
-        200: {
-          description: "List of available rooms",
-          content: {
-            "application/json": {
-              schema: z.array(
-                z.object({
-                  id: z.string(),
-                  createdBy: z.string(),
-                  robot1Id: RobotIdSchema,
-                  createdAt: z.string(),
-                  expiresAt: z.string(),
-                })
-              ),
-            },
+  }
+);
+
+// List Battle Rooms Route
+export const listBattleRoomsRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "get",
+    path: "/list",
+    tags: ["BattleRoom"],
+    summary: "List available battle rooms",
+    responses: {
+      200: {
+        description: "List of available rooms",
+        content: {
+          "application/json": {
+            schema: z.array(BattleRoomSchema),
           },
         },
       },
-    }),
-    async (c) => {
-      const db = c.get("db");
+    },
+  }),
+  async (c) => {
+    const db = c.get("db");
 
-      const rooms = await db
-        .select()
-        .from(BattleRoomTable)
-        .where(sql`status = 'WAITING' AND expires_at > NOW()`);
+    try {
+      const rooms = await db.query.BattleRoomTable.findMany({
+        where: eq(BattleRoomTable.status, "WAITING"),
+      });
 
       return c.json(rooms);
+    } catch (error) {
+      throw new HTTPException(500, { message: "Failed to list battle rooms" });
     }
-  )
-  .openapi(
-    createRoute({
-      method: "post",
-      path: "/join",
-      tags: ["BattleRoom"],
-      summary: "Join a battle room",
-      request: {
-        body: {
-          content: {
-            "application/json": {
-              schema: z.object({
-                roomId: z.string(),
-                robotId: RobotIdSchema,
-              }),
-            },
-          },
-        },
-      },
-      responses: {
-        200: {
-          description: "Successfully joined room",
-          content: {
-            "application/json": {
-              schema: z.object({
-                status: z.literal("READY"),
-                battleId: z.string(),
-              }),
-            },
-          },
-        },
-      },
-    }),
-    async (c) => {
-      const { roomId, robotId } = c.req.valid("json");
-      const db = c.get("db");
-      let battleId: string; // Add this to store the battle ID
+  }
+);
 
+// Join Battle Room Route
+export const joinBattleRoomRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "post",
+    path: "/join",
+    tags: ["BattleRoom"],
+    summary: "Join a battle room",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: JoinRoomSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Successfully joined room",
+        content: {
+          "application/json": {
+            schema: z.object({
+              status: z.literal("READY"),
+              battleId: z.string(),
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const { roomId, robotId } = c.req.valid("json");
+    const db = c.get("db");
+    const logger = c.get("logger");
+
+    try {
       const [room] = await db
         .update(BattleRoomTable)
         .set({
@@ -191,149 +208,41 @@ export const battleRoomRoutes = new OpenAPIHono<{
         .returning();
 
       if (!room) {
-        throw new Error("Room not found or not available");
+        throw new HTTPException(404, { message: "Room not found or not available" });
       }
 
-      // Start the battle automatically
-      try {
-        if (!room.robot2Id) {
-          throw new Error("Robot 2 not found");
-        }
-        if (!room.robot1Id) {
-          throw new Error("Robot 1 not found");
-        }
-        const battle = await startBattle(
-          room.robot1Id,
-          room.robot2Id,
-          db,
-          c.get("logger")
-        );
-
-        battleId = battle.id; // Store the battle ID
-
-        // Update room with battle ID
-        await db
-          .update(BattleRoomTable)
-          .set({
-            battleId: battle.id,
-            status: "IN_PROGRESS" as const,
-          })
-          .where(sql`id = ${roomId}`);
-      } catch (error) {
-        console.error("Failed to start battle:", error);
-        throw new Error("Failed to start battle");
+      if (!room.robot1Id || !room.robot2Id) {
+        throw new HTTPException(400, { message: "Invalid room configuration" });
       }
+
+      const battle = await startBattle(
+        room.robot1Id,
+        room.robot2Id,
+        db,
+        logger
+      );
+
+      await db
+        .update(BattleRoomTable)
+        .set({
+          battleId: battle.id,
+          status: "IN_PROGRESS" as const,
+        })
+        .where(sql`id = ${roomId}`);
 
       return c.json({
         status: "READY" as const,
-        battleId, // Use the stored battle ID
+        battleId: battle.id,
       });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      throw new HTTPException(500, { message: "Failed to join battle room" });
     }
-  )
-  .get("/events/:roomId", async (c) => {
-    const roomId = c.req.param("roomId");
-    console.log("SSE connection established for room:", roomId);
+  }
+);
 
-    // Helper function to encode SSE message
-    const encoder = new TextEncoder();
-    const encodeMessage = (data: unknown) => {
-      return encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
-    };
-
-    return new Response(
-      new ReadableStream({
-        async start(controller) {
-          const db = c.get("db");
-
-          // Initial room state
-          const room = await db
-            .select()
-            .from(BattleRoomTable)
-            .where(sql`id = ${roomId}`)
-            .limit(1);
-
-          if (!room.length) {
-            console.log("Room not found:", roomId);
-            controller.close();
-            return;
-          }
-
-          console.log("Sending initial room state:", room[0]);
-          controller.enqueue(encodeMessage({ room: room[0] }));
-
-          // Set up polling for updates
-          const interval = setInterval(async () => {
-            const updatedRoom = await db
-              .select()
-              .from(BattleRoomTable)
-              .where(sql`id = ${roomId}`)
-              .limit(1);
-
-            if (!updatedRoom.length) {
-              console.log("Room no longer exists:", roomId);
-              clearInterval(interval);
-              controller.close();
-              return;
-            }
-
-            console.log("Sending room update:", updatedRoom[0]);
-            controller.enqueue(encodeMessage({ room: updatedRoom[0] }));
-
-            if (updatedRoom[0].battleId) {
-              console.log("Battle started, closing SSE connection");
-              clearInterval(interval);
-              controller.close();
-            }
-          }, 1000);
-
-          // Clean up on disconnect
-          c.req.raw.signal.addEventListener("abort", () => {
-            console.log("Client disconnected, cleaning up");
-            clearInterval(interval);
-            controller.close();
-          });
-        },
-      }),
-      {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      }
-    );
-  })
-  .get("/battle-status", async (c) => {
-    const battleId = c.req.query("battleId");
-    if (!battleId?.startsWith("bat_")) {
-      throw new Error("Invalid battle ID format");
-    }
-
-    const db = c.get("db");
-    const typedBattleId = battleId as `bat_${string}`;
-
-    const battle = await db
-      .select({
-        battle: BattleTable,
-        rounds: BattleRoundsTable,
-      })
-      .from(BattleTable)
-      .leftJoin(
-        BattleRoundsTable,
-        eq(BattleTable.id, BattleRoundsTable.battleId)
-      )
-      .where(eq(BattleTable.id, typedBattleId))
-      .execute();
-
-    if (!battle.length) {
-      throw new Error("Battle not found");
-    }
-
-    // Format the response
-    const formattedBattle = {
-      ...battle[0].battle,
-      rounds: battle.map((b) => b.rounds).filter(Boolean),
-    };
-
-    return c.json(formattedBattle);
-  });
+// Combine all routes
+export const battleRoomRoutes = new OpenAPIHono<{ Variables: ContextVariables }>()
+  .route("/", createBattleRoomRoute)
+  .route("/", listBattleRoomsRoute)
+  .route("/", joinBattleRoomRoute);

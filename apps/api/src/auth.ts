@@ -7,9 +7,9 @@ import { env } from "@/env";
 
 import { sessions, users } from "@/db/schema/users.db";
 
-import type { UserId as UserIdType } from "cat-sdk";
-import type { Context } from "hono";
 import type { ContextVariables } from "@/types";
+import type { Context } from "hono";
+import type { UserId as UserIdType } from "robot-sdk";
 
 export const createLucia = (props: { db: db }) => {
   const adapter = new DrizzlePostgreSQLAdapter(props.db, sessions, users);

@@ -1,7 +1,6 @@
 import {
   type EvmAddress,
   type ItemId,
-  type UserId,
   type UserItemId,
   WALLET_TYPES,
   type WalletChainId,
@@ -20,6 +19,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { UserId } from "robot-sdk";
 import { z } from "zod";
 
 // Add this near the top of the file

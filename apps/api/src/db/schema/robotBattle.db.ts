@@ -115,9 +115,6 @@ export const BattleRoomTable = pgTable("battle_rooms", {
     .primaryKey()
     .$type<RoomId>()
     .$defaultFn(() => generateId("room")),
-  createdBy: varchar("created_by", { length: 255 })
-    .notNull()
-    .references(() => users.id),
   robot1Id: varchar("robot1_id", { length: 255 })
     .notNull()
     .$type<RobotId>()
@@ -126,6 +123,10 @@ export const BattleRoomTable = pgTable("battle_rooms", {
     .$type<RobotId>()
     .references(() => RobotTable.id),
   status: battleRoomStatusEnum("status").notNull().default("WAITING"),
+  createdBy: varchar("created_by", { length: 255 })
+    .notNull()
+    .$type<UserId>()
+    .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .defaultNow()
     .notNull(),
