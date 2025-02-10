@@ -4,7 +4,7 @@ CREATE TYPE "public"."transaction_type" AS ENUM('EARNED', 'SPENT');--> statement
 CREATE TYPE "public"."user_role" AS ENUM('USER', 'ADMIN');--> statement-breakpoint
 CREATE TYPE "public"."wallet_type" AS ENUM('ETHEREUM');--> statement-breakpoint
 CREATE TYPE "public"."battle_room_status" AS ENUM('WAITING', 'READY', 'IN_PROGRESS', 'COMPLETED', 'EXPIRED');--> statement-breakpoint
-CREATE TYPE "public"."battle_status" AS ENUM('IN_PROGRESS', 'COMPLETED', 'CANCELLED');--> statement-breakpoint
+CREATE TYPE "public"."battle_status" AS ENUM('WAITING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');--> statement-breakpoint
 CREATE TYPE "public"."robot_class" AS ENUM('ASSAULT', 'DEFENSE', 'SUPPORT', 'STEALTH', 'HEAVY');--> statement-breakpoint
 CREATE TABLE "error_logs" (
 	"id" varchar(255) PRIMARY KEY NOT NULL,
@@ -86,15 +86,11 @@ CREATE TABLE "wallets" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "battle_rooms" (
+CREATE TABLE "battle_robots" (
 	"id" varchar(255) PRIMARY KEY NOT NULL,
-	"created_by" varchar(255) NOT NULL,
-	"robot1_id" varchar(255) NOT NULL,
-	"robot2_id" varchar(255),
-	"status" "battle_room_status" DEFAULT 'WAITING' NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"expires_at" timestamp with time zone NOT NULL,
-	"battle_id" varchar(255)
+	"battle_id" varchar(255) NOT NULL,
+	"robot_id" varchar(255) NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "battle_rounds" (
@@ -103,20 +99,16 @@ CREATE TABLE "battle_rounds" (
 	"round_number" integer NOT NULL,
 	"description" text NOT NULL,
 	"tactical_analysis" text NOT NULL,
-	"robot1_action" text NOT NULL,
-	"robot2_action" text NOT NULL,
-	"round_winner_id" varchar(255) NOT NULL,
-	"damage_report" json
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "battles" (
 	"id" varchar(255) PRIMARY KEY NOT NULL,
-	"robot1_id" varchar(255) NOT NULL,
-	"robot2_id" varchar(255) NOT NULL,
 	"status" "battle_status" NOT NULL,
 	"winner_id" varchar(255),
 	"started_at" timestamp DEFAULT now() NOT NULL,
-	"completed_at" timestamp
+	"completed_at" timestamp,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "robots" (
@@ -124,6 +116,7 @@ CREATE TABLE "robots" (
 	"name" varchar(255) NOT NULL,
 	"description" text NOT NULL,
 	"prompt" text NOT NULL,
+	"image_url" text,
 	"created_by" varchar(255) NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -145,12 +138,12 @@ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_item_id_items_id_fk" FOR
 ALTER TABLE "user_items" ADD CONSTRAINT "user_items_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_items" ADD CONSTRAINT "user_items_item_id_items_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."items"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "battle_rooms" ADD CONSTRAINT "battle_rooms_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "battle_rooms" ADD CONSTRAINT "battle_rooms_robot1_id_robots_id_fk" FOREIGN KEY ("robot1_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "battle_rooms" ADD CONSTRAINT "battle_rooms_robot2_id_robots_id_fk" FOREIGN KEY ("robot2_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "battle_rooms" ADD CONSTRAINT "battle_rooms_battle_id_battles_id_fk" FOREIGN KEY ("battle_id") REFERENCES "public"."battles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "battles" ADD CONSTRAINT "battles_robot1_id_robots_id_fk" FOREIGN KEY ("robot1_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "battles" ADD CONSTRAINT "battles_robot2_id_robots_id_fk" FOREIGN KEY ("robot2_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "battle_robots" ADD CONSTRAINT "battle_robots_battle_id_battles_id_fk" FOREIGN KEY ("battle_id") REFERENCES "public"."battles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "battle_robots" ADD CONSTRAINT "battle_robots_robot_id_robots_id_fk" FOREIGN KEY ("robot_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "battle_rounds" ADD CONSTRAINT "battle_rounds_battle_id_battles_id_fk" FOREIGN KEY ("battle_id") REFERENCES "public"."battles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "battles" ADD CONSTRAINT "battles_winner_id_robots_id_fk" FOREIGN KEY ("winner_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "robots" ADD CONSTRAINT "robots_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_battle_stats" ADD CONSTRAINT "user_battle_stats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_battle_stats" ADD CONSTRAINT "user_battle_stats_selected_robot_id_robots_id_fk" FOREIGN KEY ("selected_robot_id") REFERENCES "public"."robots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "normalized_email_idx" ON "users" USING btree ("normalized_email");--> statement-breakpoint
 CREATE UNIQUE INDEX "username_idx" ON "users" USING btree ("username");--> statement-breakpoint

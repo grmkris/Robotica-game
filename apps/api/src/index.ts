@@ -1,13 +1,13 @@
-import { createRobotApi } from "@/robotApi";
 import { getDb, getPgClient } from "@/db/db";
 import { logger } from "@/logger";
 import {
 	closeQueueServices,
 	initializeQueueServices,
 } from "@/queue/queueSingleton";
+import { createRobotApi } from "@/robotApi";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { Hono } from "hono";
-import { battleRoomRoutes } from "./routes/battleRoom.routes";
+import { robotBattleApp } from "./routes/robotBattle/robotBattleRoute";
 
 // Create Hono app
 
@@ -28,7 +28,7 @@ const initApp = async () => {
 
 	const app = new Hono().route("/", robotApi);
 
-	app.route("/battle-room", battleRoomRoutes);
+	app.route("/robotica", robotBattleApp);
 
 	return app;
 };

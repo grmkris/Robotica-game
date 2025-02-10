@@ -34,6 +34,7 @@ export const BATTLE_STATUS = [
 	"IN_PROGRESS",
 	"COMPLETED",
 	"CANCELLED",
+	"FAILED",
 ] as const;
 export const BattleStatus = z.enum(BATTLE_STATUS);
 export const battleStatusEnum = pgEnum("battle_status", BATTLE_STATUS);

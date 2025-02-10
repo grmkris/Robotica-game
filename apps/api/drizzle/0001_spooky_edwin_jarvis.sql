@@ -1,1 +1,0 @@
-ALTER TABLE "robots" ADD COLUMN "image_url" text;

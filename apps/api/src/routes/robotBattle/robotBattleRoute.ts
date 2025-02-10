@@ -5,7 +5,6 @@ import {
   RobotTable,
   UserBattleStatsTable,
 } from "@/db/schema/robotBattle.db";
-import { users } from "@/db/schema/users.db";
 import { env } from "@/env";
 import { validateUser } from "@/routes/helpers";
 import { resolveBattle } from "@/routes/robotBattle/robotBattler";
@@ -324,6 +323,7 @@ export const createBattleRoute = new OpenAPIHono<{
   async (c) => {
     const body = await c.req.json();
     const { robot1Id } = body;
+    const user = validateUser(c);
     const db = c.get("db");
     const logger = c.get("logger");
 
@@ -332,7 +332,7 @@ export const createBattleRoute = new OpenAPIHono<{
       const robot1 = await db.query.RobotTable.findFirst({
         where: and(
           eq(RobotTable.id, robot1Id),
-          eq(RobotTable.createdBy, users.id),
+          eq(RobotTable.createdBy, user.id),
         ),
       });
 
@@ -356,7 +356,10 @@ export const createBattleRoute = new OpenAPIHono<{
 
       return c.json({ battleId: battle.id }); // Replace with actual battle creation
     } catch (error) {
-      logger.error("Failed to create battle", { error });
+      logger.error({
+        msg: "Failed to create battle",
+        error,
+      });
       if (error instanceof HTTPException) {
         throw error;
       }
