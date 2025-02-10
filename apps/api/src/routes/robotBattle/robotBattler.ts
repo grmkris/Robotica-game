@@ -178,9 +178,9 @@ const processRound = async (props: {
       },
     }).wrap(async () => {
       // Apply damages to robot states
-      roundResult.damages.forEach(({ defenderId, damage }) => {
+      for (const { defenderId, damage } of roundResult.damages) {
         const state = robotStates.get(defenderId);
-        if (state && state.isAlive) {
+        if (state?.isAlive) {
           state.currentHealth -= damage.amount;
           state.status.push(damage.description);
           if (state.currentHealth <= 0) {
@@ -188,7 +188,7 @@ const processRound = async (props: {
             state.status.push("ELIMINATED");
           }
         }
-      });
+      }
 
       // Save round results to database
       await db.insert(BattleRoundsTable).values({
@@ -196,7 +196,6 @@ const processRound = async (props: {
         roundNumber,
         description: roundResult.narrative,
         tacticalAnalysis: roundResult.tacticalAnalysis,
-        damages: roundResult.damages,
         createdAt: new Date(),
       });
     });

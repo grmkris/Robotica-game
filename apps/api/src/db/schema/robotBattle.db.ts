@@ -67,7 +67,7 @@ export const BattleRobotsTable = pgTable("battle_robots", {
 
 // Battle Rounds table (for detailed battle progression)
 export const BattleRoundsTable = pgTable("battle_rounds", {
-  id: varchar("id", { length: 255 }).primaryKey().$type<RoundId>(),
+  id: varchar("id", { length: 255 }).primaryKey().$type<RoundId>().$defaultFn(() => generateId("round")),
   battleId: varchar("battle_id", { length: 255 })
     .$type<BattleId>()
     .notNull()
@@ -75,6 +75,9 @@ export const BattleRoundsTable = pgTable("battle_rounds", {
   roundNumber: integer("round_number").notNull(),
   description: text("description").notNull(), // AI-generated battle narrative
   tacticalAnalysis: text("tactical_analysis").notNull(), // AI's explanation of the outcome
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .defaultNow()
+    .notNull(),
 });
 
 // Add user stats/rankings table
