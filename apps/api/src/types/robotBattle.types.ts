@@ -87,3 +87,17 @@ export type BattleStatusResponse = {
   robot2: Robot;
   winner?: Robot;
 };
+
+export type DamageType = "mobility" | "weapons" | "structural" | "power";
+
+export interface RoundDamageResult {
+  type: DamageType;
+  location: string;
+  severity: "light" | "moderate" | "severe";
+  description: string;
+}
+
+export interface BattleDamageReport {
+  robot1Damage: RoundDamageResult[];
+  robot2Damage: RoundDamageResult[];
+}

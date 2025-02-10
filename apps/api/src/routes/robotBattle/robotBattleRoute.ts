@@ -15,6 +15,10 @@ import { env } from "@/env";
 import { sql } from "drizzle-orm";
 import type { BattleRound } from "@/types/robotBattle.types";
 import { battleRoomRoutes } from "../battleRoom.routes";
+import type {
+  RoundDamageResult,
+  BattleDamageReport,
+} from "@/types/robotBattle.types";
 
 // Define Zod schemas for validation
 const RobotIdSchema = z.string().regex(/^rob_[a-zA-Z0-9]+$/);
@@ -378,7 +382,35 @@ export const selectRobotRoute = new OpenAPIHono<{
   }
 );
 
-// Add new helper function for battle simulation
+// Add new interfaces for damage tracking
+interface DamageEffect extends RoundDamageResult {
+  roundInflicted: number;
+}
+
+interface RobotDamageState {
+  mobility: DamageEffect[];
+  weapons: DamageEffect[];
+  structural: DamageEffect[];
+  power: DamageEffect[];
+}
+
+interface BattleContext {
+  robot1Damage: RobotDamageState;
+  robot2Damage: RobotDamageState;
+  previousRoundSummary?: string;
+}
+
+interface BattleRoundResult {
+  description: string;
+  winner: "robot1" | "robot2";
+  tacticalAnalysis: string;
+  inflictedDamage: {
+    robot1: RoundDamageResult[];
+    robot2: RoundDamageResult[];
+  };
+}
+
+// Update the simulateBattle function
 export async function simulateBattle(
   battleId: string,
   robot1Id: string,
@@ -402,6 +434,22 @@ export async function simulateBattle(
       throw new Error(`One or both robots not found: ${robot1Id}, ${robot2Id}`);
     }
 
+    // Initialize battle context
+    const battleContext: BattleContext = {
+      robot1Damage: {
+        mobility: [],
+        weapons: [],
+        structural: [],
+        power: [],
+      },
+      robot2Damage: {
+        mobility: [],
+        weapons: [],
+        structural: [],
+        power: [],
+      },
+    };
+
     // Simulate 3 rounds
     for (let roundNumber = 1; roundNumber <= 3; roundNumber++) {
       logger.info(`Starting round ${roundNumber}`);
@@ -411,29 +459,52 @@ export async function simulateBattle(
         messages: [
           {
             role: "system",
-            content: `You are an expert battle analyst and referee for intense robot battles. Provide detailed, visceral commentary of mechanical combat, including:
-              - Specific damage descriptions (torn metal, severed hydraulics, sparking circuits)
-              - Lasting battle effects (damaged mobility, compromised weapons, leaking fluids)
-              - Strategic implications of damage (how injuries affect combat effectiveness)
-              - Environmental interactions and hazards
-              - Brutal but realistic robot combat mechanics
-              
-              Focus on creating a cinematic, high-stakes battle narrative suitable for an adult audience.
-              
-              Return a JSON object with:
-              {
-                "description": "Detailed and intense battle narrative with specific damage descriptions",
-                "winner": "robot1 or robot2",
-                "tacticalAnalysis": "Analysis of critical damage and tactical advantages that determined the round's outcome"
-              }`,
+            content: `You are an expert battle analyst and referee for intense robot battles. Your task is to create vivid, detailed battle narratives that take into account cumulative damage and tactical implications.
+
+            Consider these key aspects:
+            - Describe specific damage locations and their severity
+            - Show how previous damage affects current performance
+            - Detail tactical adaptations due to injuries
+            - Include environmental interactions
+            - Focus on realistic robot combat mechanics
+            
+            Return a JSON object with:
+            {
+              "description": "Detailed battle narrative with specific damage descriptions",
+              "winner": "robot1 or robot2",
+              "tacticalAnalysis": "Analysis of critical moments and strategic implications",
+              "inflictedDamage": {
+                "robot1": [
+                  {
+                    "type": "mobility|weapons|structural|power",
+                    "location": "specific part affected",
+                    "severity": "light|moderate|severe",
+                    "description": "detailed damage description"
+                  }
+                ],
+                "robot2": [
+                    {
+                    "type": "mobility|weapons|structural|power",
+                    "location": "specific part affected",
+                    "severity": "light|moderate|severe",
+                    "description": "detailed damage description"
+                  }
+                ]
+              }
+            }`,
           },
           {
             role: "user",
             content: `Round ${roundNumber}:
               Robot 1: "${robot1.name}" - ${robot1.description}
+              Current Damage: ${JSON.stringify(battleContext.robot1Damage)}
+
               Robot 2: "${robot2.name}" - ${robot2.description}
+              Current Damage: ${JSON.stringify(battleContext.robot2Damage)}
+
+              Previous Round Summary: ${battleContext.previousRoundSummary || "First round of battle"}
               
-              Analyze their capabilities and narrate this battle round.`,
+              Narrate this battle round considering previous damage and tactical implications.`,
           },
         ],
       });
@@ -443,15 +514,36 @@ export async function simulateBattle(
         throw new Error("Failed to generate round results");
       }
 
-      logger.info(`Round ${roundNumber} OpenAI response:`, content);
-
       try {
-        const roundResult = JSON.parse(content);
+        const roundResult = JSON.parse(content) as BattleRoundResult;
         logger.info(`Round ${roundNumber} parsed result:`, roundResult);
+
+        // Update battle context with new damage
+        roundResult.inflictedDamage.robot1.forEach(
+          (damage: RoundDamageResult) => {
+            battleContext.robot1Damage[damage.type].push({
+              ...damage,
+              roundInflicted: roundNumber,
+            });
+          }
+        );
+
+        roundResult.inflictedDamage.robot2.forEach(
+          (damage: RoundDamageResult) => {
+            battleContext.robot2Damage[damage.type].push({
+              ...damage,
+              roundInflicted: roundNumber,
+            });
+          }
+        );
+
+        // Update previous round summary
+        battleContext.previousRoundSummary = roundResult.description;
 
         const roundWinnerId =
           roundResult.winner === "robot1" ? robot1Id : robot2Id;
 
+        // Save round results to database
         await db.insert(BattleRoundsTable).values({
           id: generateId("round"),
           battleId,
@@ -461,6 +553,10 @@ export async function simulateBattle(
           robot1Action: `${robot1.name} engages in battle`,
           robot2Action: `${robot2.name} engages in battle`,
           roundWinnerId,
+          damageReport: {
+            robot1Damage: roundResult.inflictedDamage.robot1,
+            robot2Damage: roundResult.inflictedDamage.robot2,
+          } satisfies BattleDamageReport,
         });
       } catch (parseError) {
         logger.error("Failed to parse round result:", parseError, content);

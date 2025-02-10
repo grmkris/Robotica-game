@@ -7,9 +7,10 @@ import {
   integer,
   pgEnum,
   uniqueIndex,
+  json,
 } from "drizzle-orm/pg-core";
 import { users } from "./users.db";
-import type { RoomId } from "@/types/robotBattle.types";
+import type { RoomId, BattleDamageReport } from "@/types/robotBattle.types";
 
 // Update the robot classes to be more descriptive
 export const ROBOT_CLASSES = [
@@ -68,6 +69,7 @@ export const BattleRoundsTable = pgTable("battle_rounds", {
   roundWinnerId: varchar("round_winner_id", { length: 255 })
     .$type<`rob${string}`>()
     .notNull(),
+  damageReport: json("damage_report").$type<BattleDamageReport>(),
 });
 
 // Add user stats/rankings table

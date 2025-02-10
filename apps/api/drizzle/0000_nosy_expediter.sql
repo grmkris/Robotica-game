@@ -105,7 +105,8 @@ CREATE TABLE "battle_rounds" (
 	"tactical_analysis" text NOT NULL,
 	"robot1_action" text NOT NULL,
 	"robot2_action" text NOT NULL,
-	"round_winner_id" varchar(255) NOT NULL
+	"round_winner_id" varchar(255) NOT NULL,
+	"damage_report" json
 );
 --> statement-breakpoint
 CREATE TABLE "battles" (

@@ -1,5 +1,5 @@
 {
-  "id": "e3e9f4a4-574d-4a64-a6b3-cddc272ee500",
+  "id": "97493653-1d80-447f-9be6-f6c49d51485d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -781,6 +781,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "damage_report": {
+          "name": "damage_report",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
