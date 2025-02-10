@@ -1,4 +1,3 @@
-import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,18 +7,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
+import type { BattleId, RobotId, UserId } from "robot-sdk";
 
-interface BattleRoomCardProps {
-  id: string;
-  createdBy: string;
-  robot1Id: string;
-  createdAt: string;
-  expiresAt: string;
+interface BattleCardProps {
+  id: BattleId;
+  createdBy: UserId;
+  robot1Id: RobotId;
+  createdAt: Date;
+  expiresAt: Date;
   onJoin: () => void;
   isLoading?: boolean;
 }
 
-export function BattleRoomCard({
+export function BattleCard({
   id,
   createdBy,
   robot1Id,
@@ -27,7 +27,7 @@ export function BattleRoomCard({
   expiresAt,
   onJoin,
   isLoading,
-}: BattleRoomCardProps) {
+}: BattleCardProps) {
   return (
     <Card className="w-full">
       <CardHeader>

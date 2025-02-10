@@ -1,6 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiClient";
+import { useGetBattleStatus } from "@/app/_lib/robotLib/robotHooks";
 import {
   Card,
   CardContent,
@@ -9,70 +7,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { BattleId, BattleStatus, RobotId, RoundId } from "robot-sdk";
 
 interface BattleRound {
-  id: string;
-  battleId: string;
+  id: RoundId;
+  battleId: BattleId;
   roundNumber: number;
   description: string;
   tacticalAnalysis: string;
   robot1Action: string;
   robot2Action: string;
-  roundWinnerId: string;
+  roundWinnerId: RobotId;
 }
 
 interface Battle {
-  id: string;
-  robot1Id: string;
-  robot2Id: string;
-  status: "IN_PROGRESS" | "COMPLETED";
-  winnerId: string | null;
-  startedAt: string;
-  completedAt: string | null;
+  id: BattleId;
+  robot1Id: RobotId;
+  robot2Id: RobotId;
+  status: BattleStatus;
+  winnerId: RobotId | null;
+  startedAt: Date;
+  completedAt: Date | null;
   rounds: BattleRound[];
 }
 
-// Add this interface for SSE event data
-interface RoomEventData {
-  room: {
-    id: string;
-    status: string;
-    // ... other room fields
-  };
-  battle: Battle | null;
-  rounds: BattleRound[];
-}
+export function BattleViewer({ battleId }: { battleId: BattleId }) {
+  const { data: battle, isLoading } = useGetBattleStatus(battleId);
 
-export function BattleViewer({ battleId }: { battleId: string }) {
-  const [battle, setBattle] = useState<Battle | null>(null);
-  const [isWaiting, setIsWaiting] = useState(true);
-
-  useEffect(() => {
-    if (!battleId) return;
-
-    // Initial battle fetch
-    const fetchBattle = async () => {
-      try {
-        const response = await apiClient.robotBattle.getBattleStatus(battleId);
-        const data = (await response.json()) as Battle;
-        setBattle(data);
-        setIsWaiting(false);
-      } catch (error) {
-        console.error("Failed to fetch battle:", error);
-      }
-    };
-
-    fetchBattle();
-
-    // Set up polling for battle updates
-    const interval = setInterval(fetchBattle, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [battleId]);
-
-  if (isWaiting) {
+  if (isLoading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
         <p className="text-zinc-400">Loading battle...</p>

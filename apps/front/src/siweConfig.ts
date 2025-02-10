@@ -1,13 +1,14 @@
-import { type ApiClient, apiClient } from "@/lib/apiClient";
+import type { RobotClient } from "@/app/_lib/robotLib/robotClient";
+import { robotClient } from "@/app/_lib/robotLib/robotClient";
 import type {
   SIWECreateMessageArgs,
   SIWESession,
   SIWEVerifyMessageArgs,
 } from "@reown/appkit-siwe";
 import { createSIWEConfig, formatMessage } from "@reown/appkit-siwe";
-import { base, baseSepolia } from "@reown/appkit/networks";
+import { avalanche } from "@reown/appkit/networks";
 
-export type CatSiweAuth = {
+export type RobotSiweAuth = {
   getCsrfToken: () => Promise<string>;
   signIn: (props: {
     message: string;
@@ -29,9 +30,9 @@ type UserResponse = {
   }>;
 };
 
-export const createCatSiweAuth = (props: {
-  apiClient: ApiClient;
-}): CatSiweAuth => ({
+export const createRobotSiweAuth = (props: {
+  apiClient: RobotClient;
+}): RobotSiweAuth => ({
   getCsrfToken: async () => {
     const response = await props.apiClient.auth.siwe.nonce.$get();
     const data = (await response.json()) as NonceResponse;
@@ -58,14 +59,14 @@ export const createCatSiweAuth = (props: {
   },
 
   getSession: async () => {
-    const response = await props.apiClient.auth.me();
+    const response = await props.apiClient.auth.me.$get();
     if (!response.ok) return null;
-    const data = (await response.json()) as UserResponse;
+    const data = await response.json();
     const wallet = data.wallets[0];
     if (!wallet) return null;
     const session: SIWESession = {
       address: wallet.address,
-      chainId: wallet.chainId,
+      chainId: avalanche.id,
     };
     console.log("session", session);
     return session;
@@ -80,8 +81,8 @@ export const createCatSiweAuth = (props: {
   },
 });
 
-const auth = createCatSiweAuth({
-  apiClient: apiClient,
+const auth = createRobotSiweAuth({
+  apiClient: robotClient,
 });
 
 export const siweConfig = createSIWEConfig({
@@ -89,8 +90,8 @@ export const siweConfig = createSIWEConfig({
     return {
       domain: typeof window !== "undefined" ? window.location.host : "",
       uri: typeof window !== "undefined" ? window.location.origin : "",
-      chains: [base.id, baseSepolia.id],
-      statement: "Sign in with Ethereum to Cat Misha",
+      chains: [avalanche.id],
+      statement: "Sign in with Ethereum to Robotica",
     };
   },
   createMessage: ({ address, ...args }: SIWECreateMessageArgs) =>

@@ -3,12 +3,11 @@ import type { BattleId, RobotId } from "robot-sdk";
 import {
   createBattle,
   createRobot,
+  getBattleById,
   getBattleEvents,
-  getBattleStatus,
   getUserRobots,
   joinBattle,
-  listBattles,
-  selectRobot,
+  listBattles
 } from "./robotActions";
 import { robotClient } from "./robotClient";
 
@@ -47,12 +46,12 @@ export const useJoinBattle = () => {
   });
 };
 
-export const useGetBattleStatus = (battleId: BattleId | undefined) => {
+export const useGetBattleById = (battleId: BattleId | undefined) => {
   return useQuery({
     queryKey: ["battleStatus", battleId],
     queryFn: () => {
       if (!battleId) throw new Error("Battle ID is required");
-      return getBattleStatus({ battleId, robotClient });
+      return getBattleById({ battleId, robotClient });
     },
     enabled: !!battleId,
     refetchInterval: 1000,
@@ -63,13 +62,6 @@ export const useGetUserRobots = () => {
   return useQuery({
     queryKey: ["userRobots"],
     queryFn: () => getUserRobots({ robotClient }),
-  });
-};
-
-export const useSelectRobot = () => {
-  return useMutation({
-    mutationFn: (props: { robotId: RobotId }) =>
-      selectRobot({ robotId: props.robotId, robotClient }),
   });
 };
 

@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { apiClient } from "@/lib/apiClient";
+import { useCreateRobot } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export function CreateRobot() {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const createRobot = useCreateRobot();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await apiClient.createRobot(prompt);
+      await createRobot.mutateAsync({ prompt });
       toast.success("Robot created successfully!");
       setPrompt("");
     } catch (error) {

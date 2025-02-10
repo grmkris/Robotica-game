@@ -17,7 +17,7 @@ export const createRobot = async (props: {
   prompt: string;
   robotClient: RobotClient;
 }) => {
-  const response = await props.robotClient["robot-battle"]["create-robot"].$post({
+  const response = await props.robotClient["robot-battle"].robots["create-robot"].$post({
     json: { prompt: props.prompt },
   });
   return response.json();
@@ -27,7 +27,7 @@ export const createBattle = async (props: {
   robot1Id: RobotId;
   robotClient: RobotClient;
 }) => {
-  const response = await props.robotClient["robot-battle"]["create-battle"].$post({
+  const response = await props.robotClient["robot-battle"].battles["create-battle"].$post({
     json: { robot1Id: props.robot1Id },
   });
   return response.json();
@@ -38,43 +38,34 @@ export const joinBattle = async (props: {
   robotId: RobotId;
   robotClient: RobotClient;
 }) => {
-  const response = await props.robotClient["robot-battle"]["join-battle"].$post({
-    json: { battleId: props.battleId, robotId: props.robotId },
+  const response = await props.robotClient["robot-battle"].battles["{battleId}"].join["{battleId}"].join.$post({
+    param: { battleId: props.battleId }, json: { robotId: props.robotId }
   });
   return response.json();
 };
 
 
-export const getBattleStatus = async (props: {
+export const getBattleById = async (props: {
   battleId: BattleId;
   robotClient: RobotClient;
 }) => {
-  const response = await props.robotClient["robot-battle"]["battle-status"].$get({
-    query: { battleId: props.battleId },
+  const response = await props.robotClient["robot-battle"].battles["{battleId}"]["{battleId}"].$get({
+    param: { battleId: props.battleId }
   });
   return response.json();
 };
 
 export const getUserRobots = async (props: { robotClient: RobotClient }) => {
-  const response = await props.robotClient["robot-battle"]["user-robots"].$get();
+  const response = await props.robotClient["robot-battle"].robots.$get();
   return response.json();
 };
 
-export const selectRobot = async (props: {
-  robotId: RobotId;
-  robotClient: RobotClient;
-}) => {
-  const response = await props.robotClient["robot-battle"]["select-robot"].$post({
-    json: { robotId: props.robotId },
-  });
-  return response.json();
-};
 
 export const getBattleEvents = async (props: {
   battleId: BattleId;
   robotClient: RobotClient;
 }) => {
-  const response = await props.robotClient["robot-battle"]["battle-events"][":battleId"].$get({
+  const response = await props.robotClient["robot-battle"].battles["{battleId}"].events["{battleId}"].events.$get({
     param: { battleId: props.battleId },
   });
   return response;
@@ -85,7 +76,7 @@ export const listBattles = async (props: {
   limit?: string;
   robotClient: RobotClient;
 }) => {
-  const response = await props.robotClient["robot-battle"].battles.$get({
+  const response = await props.robotClient["robot-battle"].battles.battles.$get({
     query: {
       page: props.page,
       limit: props.limit,

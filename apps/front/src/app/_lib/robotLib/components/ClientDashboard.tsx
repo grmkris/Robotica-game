@@ -1,52 +1,32 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiClient";
+import { useGetUserRobots } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
 } from "@/components/ui/card";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { BattleRoomList } from "./battle/BattleRoomList";
+import type { RobotId } from "robot-sdk";
 import { CreateBattleRoom } from "./battle/CreateBattleRoom";
 
 type Robot = {
-  id: string;
+  id: RobotId;
   name: string;
   description: string;
-  createdAt: string;
+  createdAt: Date;
   imageUrl?: string;
 };
 
 function UserRobots() {
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["userRobots"],
-    queryFn: async () => {
-      const response = await apiClient.robotBattle.getUserRobots();
-      const json = await response.json();
-      return json as {
-        robots: Robot[];
-        selectedRobotId: string | null;
-      };
-    },
-  });
-
-  const selectRobotMutation = useMutation({
-    mutationFn: async (robotId: string) => {
-      const response = await apiClient.robotBattle.selectActiveRobot(robotId);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userRobots"] });
-    },
-  });
+  const { data, isLoading } = useGetUserRobots();
 
   if (isLoading) {
     return (
@@ -61,11 +41,10 @@ function UserRobots() {
       {data?.robots?.map((robot) => (
         <Card
           key={robot.id}
-          className={`bg-zinc-900/50 backdrop-blur-sm transition-all hover:bg-zinc-900/70 ${
-            robot.id === data.selectedRobotId
-              ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-              : ""
-          }`}
+          className={`bg-zinc-900/50 backdrop-blur-sm transition-all hover:bg-zinc-900/70 ${robot.id === data.selectedRobotId
+            ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+            : ""
+            }`}
         >
           {robot.imageUrl && (
             <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">

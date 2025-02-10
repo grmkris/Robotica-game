@@ -1,75 +1,35 @@
-import React, { useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { BattleRoomCard } from "./BattleRoomCard";
+import { useJoinBattle, useListBattles } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { apiClient } from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
+import type { BattleId, BattleStatus, RobotId, UserId } from "robot-sdk";
+import { BattleCard } from "./BattleRoomCard";
 
 interface BattleRoom {
-  id: string;
-  createdBy: string;
-  robot1Id: string;
-  createdAt: string;
-  expiresAt: string;
+  id: BattleId;
+  createdBy: UserId;
+  robot1Id: RobotId;
+  createdAt: Date;
+  expiresAt: Date;
 }
 
 interface JoinRoomResponse {
-  battleId: string;
-  status: string;
+  battleId: BattleId;
+  status: BattleStatus;
 }
 
-interface RoomEventData {
-  room: {
-    id: string;
-    status: string;
-    battleId: string | null;
-  };
-  battle?: {
-    id: string;
-  };
-}
-
-export function BattleRoomList({
+export function BattlesList({
   selectedRobotId,
 }: {
-  selectedRobotId: string;
+  selectedRobotId: RobotId;
 }) {
   const router = useRouter();
 
-  const {
-    data: rooms,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["battleRooms"],
-    queryFn: async () => {
-      const response = await apiClient.robotBattle.listRooms();
-      const json = await response.json();
-      return json as BattleRoom[];
-    },
+  const { data: battles, isLoading, refetch } = useListBattles({
+    page: "1",
+    limit: "10",
   });
 
-  const joinMutation = useMutation({
-    mutationFn: async (roomId: string) => {
-      const response = await apiClient.robotBattle.joinRoom({
-        roomId,
-        robotId: selectedRobotId,
-      });
-      return response.json() as Promise<JoinRoomResponse>;
-    },
-    onSuccess: (data) => {
-      toast.success("Joined battle room!", {
-        description: "Battle starting...",
-      });
-      router.push(`/robot-battle/battle/${data.battleId}`);
-    },
-    onError: (error) => {
-      toast.error("Failed to join room", {
-        description: error.message,
-      });
-    },
-  });
+  const joinBattle = useJoinBattle();
 
   if (isLoading) {
     return <div>Loading rooms...</div>;
@@ -84,15 +44,20 @@ export function BattleRoomList({
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {rooms?.map((room) => (
-          <BattleRoomCard
+        {battles?.battles.map((room) => (
+          <BattleCard
             key={room.id}
             {...room}
-            onJoin={() => joinMutation.mutate(room.id)}
-            isLoading={joinMutation.isPending}
+            onJoin={() =>
+              joinBattle.mutate({
+                battleId: room.id,
+                robotId: selectedRobotId,
+              })
+            }
+            isLoading={joinBattle.isPending}
           />
         ))}
-        {rooms?.length === 0 && (
+        {battles?.battles.length === 0 && (
           <p className="col-span-full py-8 text-center text-muted-foreground">
             No battle rooms available. Create one to start battling!
           </p>
