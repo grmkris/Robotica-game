@@ -1,10 +1,10 @@
 import { relations } from "drizzle-orm";
 import {
-  RobotTable,
-  BattleTable,
+  BattleRobotsTable,
   BattleRoundsTable,
-  UserBattleStatsTable,
-  BattleRoomTable,
+  BattleTable,
+  RobotTable,
+  UserBattleStatsTable
 } from "./robotBattle.db";
 import {
   emailVerificationCodes,
@@ -18,10 +18,9 @@ import {
 
 // Relations for Robot Battle tables
 export const robotRelations = relations(RobotTable, ({ many, one }) => ({
-  battlesAsRobot1: many(BattleTable, { relationName: "robot1Battles" }),
-  battlesAsRobot2: many(BattleTable, { relationName: "robot2Battles" }),
   wonBattles: many(BattleTable, { relationName: "battleWinner" }),
-  wonRounds: many(BattleRoundsTable, { relationName: "roundWinner" }),
+  battleRobots: many(BattleRobotsTable),
+  selectedByUsers: many(UserBattleStatsTable),
   creator: one(users, {
     fields: [RobotTable.createdBy],
     references: [users.id],
@@ -29,22 +28,13 @@ export const robotRelations = relations(RobotTable, ({ many, one }) => ({
 }));
 
 export const battleRelations = relations(BattleTable, ({ one, many }) => ({
-  robot1: one(RobotTable, {
-    fields: [BattleTable.robot1Id],
-    references: [RobotTable.id],
-    relationName: "robot1Battles",
-  }),
-  robot2: one(RobotTable, {
-    fields: [BattleTable.robot2Id],
-    references: [RobotTable.id],
-    relationName: "robot2Battles",
-  }),
   winner: one(RobotTable, {
     fields: [BattleTable.winnerId],
     references: [RobotTable.id],
     relationName: "battleWinner",
   }),
   rounds: many(BattleRoundsTable),
+  robots: many(BattleRobotsTable)
 }));
 
 export const battleRoundsRelations = relations(
@@ -53,11 +43,6 @@ export const battleRoundsRelations = relations(
     battle: one(BattleTable, {
       fields: [BattleRoundsTable.battleId],
       references: [BattleTable.id],
-    }),
-    roundWinner: one(RobotTable, {
-      fields: [BattleRoundsTable.roundWinnerId],
-      references: [RobotTable.id],
-      relationName: "roundWinner",
     }),
   })
 );
@@ -142,24 +127,5 @@ export const walletsRelations = relations(wallets, ({ one }) => ({
   user: one(users, {
     fields: [wallets.userId],
     references: [users.id],
-  }),
-}));
-
-export const battleRoomRelations = relations(BattleRoomTable, ({ one }) => ({
-  creator: one(users, {
-    fields: [BattleRoomTable.createdBy],
-    references: [users.id],
-  }),
-  robot1: one(RobotTable, {
-    fields: [BattleRoomTable.robot1Id],
-    references: [RobotTable.id],
-  }),
-  robot2: one(RobotTable, {
-    fields: [BattleRoomTable.robot2Id],
-    references: [RobotTable.id],
-  }),
-  battle: one(BattleTable, {
-    fields: [BattleRoomTable.battleId],
-    references: [BattleTable.id],
   }),
 }));
