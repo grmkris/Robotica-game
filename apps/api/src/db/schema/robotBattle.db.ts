@@ -1,16 +1,17 @@
-import { generateId } from "@/types/robotBattle.types";
+import type { BattleDamageReport } from "@/types/robotBattle.types";
 import {
+  integer,
+  json,
+  pgEnum,
   pgTable,
   text,
-  varchar,
   timestamp,
-  integer,
-  pgEnum,
   uniqueIndex,
-  json,
+  varchar,
 } from "drizzle-orm/pg-core";
+import type { BattleId, RobotId, RoundId, StatsId, UserId } from "robot-sdk";
+import { type RoomId, generateId } from "robot-sdk";
 import { users } from "./users.db";
-import type { RoomId, BattleDamageReport } from "@/types/robotBattle.types";
 
 // Update the robot classes to be more descriptive
 export const ROBOT_CLASSES = [
@@ -30,7 +31,7 @@ export const battleStatusEnum = pgEnum("battle_status", [
 
 // Robot table
 export const RobotTable = pgTable("robots", {
-  id: varchar("id", { length: 255 }).primaryKey().$type<`rob_${string}`>(),
+  id: varchar("id", { length: 255 }).primaryKey().$type<RobotId>(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(),
   prompt: text("prompt").notNull(),
@@ -43,7 +44,7 @@ export const RobotTable = pgTable("robots", {
 
 // Battle table
 export const BattleTable = pgTable("battles", {
-  id: varchar("id", { length: 255 }).primaryKey().$type<`bat_${string}`>(),
+  id: varchar("id", { length: 255 }).primaryKey().$type<BattleId>(),
   robot1Id: varchar("robot1_id", { length: 255 })
     .notNull()
     .references(() => RobotTable.id),
@@ -51,16 +52,16 @@ export const BattleTable = pgTable("battles", {
     .notNull()
     .references(() => RobotTable.id),
   status: battleStatusEnum("status").notNull(),
-  winnerId: varchar("winner_id", { length: 255 }).$type<`rob${string}`>(),
+  winnerId: varchar("winner_id", { length: 255 }).$type<RobotId>(),
   startedAt: timestamp("started_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
 });
 
 // Battle Rounds table (for detailed battle progression)
 export const BattleRoundsTable = pgTable("battle_rounds", {
-  id: varchar("id", { length: 255 }).primaryKey().$type<`rnd_${string}`>(),
+  id: varchar("id", { length: 255 }).primaryKey().$type<RoundId>(),
   battleId: varchar("battle_id", { length: 255 })
-    .$type<`bat${string}`>()
+    .$type<BattleId>()
     .notNull(),
   roundNumber: integer("round_number").notNull(),
   description: text("description").notNull(), // AI-generated battle narrative
@@ -68,7 +69,7 @@ export const BattleRoundsTable = pgTable("battle_rounds", {
   robot1Action: text("robot1_action").notNull(),
   robot2Action: text("robot2_action").notNull(),
   roundWinnerId: varchar("round_winner_id", { length: 255 })
-    .$type<`rob${string}`>()
+    .$type<RobotId>()
     .notNull(),
   damageReport: json("damage_report").$type<BattleDamageReport>(),
 });
@@ -79,8 +80,10 @@ export const UserBattleStatsTable = pgTable(
   {
     id: varchar("id", { length: 255 })
       .primaryKey()
-      .$defaultFn(() => generateId("stats")),
-    userId: varchar("user_id", { length: 255 }).notNull(),
+      .$defaultFn(() => generateId("stats")).$type<StatsId>(),
+    userId: varchar("user_id", { length: 255 })
+      .notNull()
+      .$type<UserId>(),
     wins: integer("wins").notNull().default(0),
     losses: integer("losses").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -90,7 +93,7 @@ export const UserBattleStatsTable = pgTable(
       .defaultNow()
       .notNull(),
     selectedRobotId: varchar("selected_robot_id", { length: 255 })
-      .$type<`rob_${string}`>()
+      .$type<RobotId>()
       .references(() => RobotTable.id),
   },
   (table) => ({
@@ -111,16 +114,16 @@ export const BattleRoomTable = pgTable("battle_rooms", {
   id: varchar("id", { length: 255 })
     .primaryKey()
     .$type<RoomId>()
-    .$defaultFn(() => generateId("room") as RoomId),
+    .$defaultFn(() => generateId("room")),
   createdBy: varchar("created_by", { length: 255 })
     .notNull()
     .references(() => users.id),
   robot1Id: varchar("robot1_id", { length: 255 })
     .notNull()
-    .$type<`rob_${string}`>()
+    .$type<RobotId>()
     .references(() => RobotTable.id),
   robot2Id: varchar("robot2_id", { length: 255 })
-    .$type<`rob_${string}`>()
+    .$type<RobotId>()
     .references(() => RobotTable.id),
   status: battleRoomStatusEnum("status").notNull().default("WAITING"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })

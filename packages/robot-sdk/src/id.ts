@@ -6,6 +6,8 @@ const prefixes = {
   battle: "bat",
   round: "rnd",
   stats: "stats",
+  room: "room",
+  user: "user",
 } as const;
 
 type Prefix = (typeof prefixes)[keyof typeof prefixes];
@@ -30,6 +32,10 @@ export const RoundId = createIdSchema(prefixes.round);
 export type RoundId = z.infer<typeof RoundId>;
 export const StatsId = createIdSchema(prefixes.stats);
 export type StatsId = z.infer<typeof StatsId>;
+export const RoomId = createIdSchema(prefixes.room);
+export type RoomId = z.infer<typeof RoomId>;
+export const UserId = createIdSchema(prefixes.user);
+export type UserId = z.infer<typeof UserId>;  
 
 export function generateId<T extends keyof typeof prefixes>(
   prefix: T,

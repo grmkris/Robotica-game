@@ -1,34 +1,8 @@
+import { UserId } from "cat-sdk";
+import { BattleId, RobotId, RoundId } from "robot-sdk";
 import { z } from "zod";
 
-// ID Types
-export type RobotId = `rob_${string}`;
-export type BattleId = `bat_${string}`;
-export type RoundId = `rnd_${string}`;
-export type StatsId = `stats_${string}`;
-export type UserId = `user${string}`;
-export type RoomId = `room_${string}`;
 
-// Add "room" to the possible types
-export type IdType = "robot" | "battle" | "round" | "stats" | "room";
-
-// Generate ID function
-export function generateId(
-  type: IdType
-): RobotId | BattleId | RoundId | StatsId | RoomId {
-  const uuid = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-  switch (type) {
-    case "robot":
-      return `rob_${uuid}` as RobotId;
-    case "battle":
-      return `bat_${uuid}` as BattleId;
-    case "round":
-      return `rnd_${uuid}` as RoundId;
-    case "stats":
-      return `stats_${uuid}` as StatsId;
-    case "room":
-      return `room_${uuid}` as RoomId;
-  }
-}
 
 // Battle Status
 export const BATTLE_STATUS = ["IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
@@ -36,34 +10,34 @@ export type BattleStatus = (typeof BATTLE_STATUS)[number];
 
 // Zod Schemas
 export const RobotSchema = z.object({
-  id: z.string().regex(/^rob/),
+  id: RobotId,
   name: z.string(),
   description: z.string(),
   prompt: z.string(),
   imageUrl: z.string().optional(),
-  createdBy: z.string(),
+  createdBy: UserId,
   createdAt: z.date(),
 });
 
 export const BattleSchema = z.object({
-  id: z.string().regex(/^bat/),
-  robot1Id: z.string().regex(/^rob/),
-  robot2Id: z.string().regex(/^rob/),
+  id: BattleId,
+  robot1Id: RobotId,
+  robot2Id: RobotId,
   status: z.enum(BATTLE_STATUS),
-  winnerId: z.string().regex(/^rob/).optional(),
+  winnerId: RobotId.optional(),
   startedAt: z.date(),
   completedAt: z.date().optional(),
 });
 
 export const BattleRoundSchema = z.object({
-  id: z.string().regex(/^rnd/),
-  battleId: z.string().regex(/^bat/),
+  id: RoundId,
+  battleId: BattleId,
   roundNumber: z.number(),
   description: z.string(),
   tacticalAnalysis: z.string(),
   robot1Action: z.string(),
   robot2Action: z.string(),
-  roundWinnerId: z.string().regex(/^rob/),
+  roundWinnerId: RobotId,
 });
 
 // Types from Schemas

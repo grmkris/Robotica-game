@@ -33,6 +33,7 @@
     "cat-instagram": "workspace:*",
     "cat-logger": "workspace:*",
     "cat-media-gen": "workspace:*",
+    "robot-sdk": "workspace:*",
     "cat-sdk": "workspace:*",
     "cat-storage": "workspace:*",
     "cat-tools": "workspace:*",

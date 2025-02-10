@@ -1,31 +1,32 @@
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { createRoute } from "@hono/zod-openapi";
-import { z } from "zod";
-import type { ContextVariables } from "@/types";
+import { validateUser } from "@/auth";
+import type { db } from "@/db/db";
 import {
   BattleRoomTable,
-  BattleTable,
   BattleRoundsTable,
+  BattleTable,
 } from "@/db/schema/robotBattle.db";
-import { generateId } from "@/types/robotBattle.types";
-import { sql, eq } from "drizzle-orm";
-import { validateUser } from "@/auth";
-import { simulateBattle } from "./robotBattle/robotBattleRoute";
+import { simulateBattle } from "@/routes/robotBattle/robotBattleRoute";
+import type { ContextVariables } from "@/types";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
+import type { Logger } from "cat-logger";
+import { eq, sql } from "drizzle-orm";
+import { type RobotId, generateId } from "robot-sdk";
+import { z } from "zod";
 
 // Create a Zod schema for RobotId validation
 const RobotIdSchema = z.string().regex(/^rob_/);
 
 // Add this function near the top of the file after imports
 async function startBattle(
-  robot1Id: `rob_${string}`,
-  robot2Id: `rob_${string}`,
-  db: any,
-  logger: any
+  robot1Id: RobotId,
+  robot2Id: RobotId,
+  db: db,
+  logger: Logger
 ) {
   const [battle] = await db
     .insert(BattleTable)
     .values({
-      id: generateId("battle") as `bat_${string}`,
+      id: generateId("battle"),
       robot1Id,
       robot2Id,
       status: "IN_PROGRESS",
@@ -235,7 +236,7 @@ export const battleRoomRoutes = new OpenAPIHono<{
 
     // Helper function to encode SSE message
     const encoder = new TextEncoder();
-    const encodeMessage = (data: any) => {
+    const encodeMessage = (data: unknown) => {
       return encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
     };
 

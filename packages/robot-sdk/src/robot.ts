@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RobotId } from "./id";
+import type { RobotId } from "./id";
 
 // Battle Status
 export const BATTLE_STATUS = ["IN_PROGRESS", "COMPLETED", "CANCELLED"] as const;
