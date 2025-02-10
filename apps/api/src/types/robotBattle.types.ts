@@ -40,6 +40,7 @@ export const RobotSchema = z.object({
   name: z.string(),
   description: z.string(),
   prompt: z.string(),
+  imageUrl: z.string().optional(),
   createdBy: z.string(),
   createdAt: z.date(),
 });

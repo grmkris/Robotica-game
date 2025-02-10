@@ -15,6 +15,14 @@ import Link from "next/link";
 import { BattleRoomList } from "./battle/BattleRoomList";
 import { CreateBattleRoom } from "./battle/CreateBattleRoom";
 
+type Robot = {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  imageUrl?: string;
+};
+
 function UserRobots() {
   const queryClient = useQueryClient();
 
@@ -24,12 +32,7 @@ function UserRobots() {
       const response = await apiClient.robotBattle.getUserRobots();
       const json = await response.json();
       return json as {
-        robots: Array<{
-          id: string;
-          name: string;
-          description: string;
-          createdAt: string;
-        }>;
+        robots: Robot[];
         selectedRobotId: string | null;
       };
     },
@@ -64,6 +67,17 @@ function UserRobots() {
               : ""
           }`}
         >
+          {robot.imageUrl && (
+            <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
+              <img
+                src={robot.imageUrl}
+                alt={robot.name}
+                className="object-cover object-center"
+                width={400}
+                height={400}
+              />
+            </div>
+          )}
           <CardHeader>
             <CardTitle className="text-cyan-400">{robot.name}</CardTitle>
             <CardDescription className="line-clamp-3">
@@ -102,12 +116,7 @@ export function ClientDashboard() {
       const response = await apiClient.robotBattle.getUserRobots();
       const json = await response.json();
       return json as {
-        robots: Array<{
-          id: string;
-          name: string;
-          description: string;
-          createdAt: string;
-        }>;
+        robots: Robot[];
         selectedRobotId: string | null;
       };
     },

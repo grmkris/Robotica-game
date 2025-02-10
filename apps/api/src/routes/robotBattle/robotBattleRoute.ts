@@ -19,10 +19,14 @@ import type {
   RoundDamageResult,
   BattleDamageReport,
 } from "@/types/robotBattle.types";
+import { createMediaGenClient } from "cat-media-gen";
 
 // Define Zod schemas for validation
 const RobotIdSchema = z.string().regex(/^rob_[a-zA-Z0-9]+$/);
 const BattleIdSchema = z.string().regex(/^bat_[a-zA-Z0-9]+$/);
+
+// Add to the top of the file with other env variables
+const mediaGen = createMediaGenClient({ falApiKey: env.FAL_API_KEY });
 
 // Create Robot Route
 export const createRobotRoute = new OpenAPIHono<{
@@ -68,39 +72,20 @@ export const createRobotRoute = new OpenAPIHono<{
 
     try {
       logger.info("Creating robot with prompt:", prompt);
-
       const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: `You are a robot designer. Create a unique and creative robot based on the user's prompt.
-                     Focus on describing its unique characteristics, abilities, strengths, and potential weaknesses.
-                     Return a JSON object with:
-                     {
-                       "name": "Creative robot name",
-                       "description": "Detailed description of the robot's capabilities, design, and tactical considerations"
-                     }`,
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-      });
+      // Generate robot characteristics first
+      const robotData = await generateRobotData(openai, prompt, logger);
+      let imageUrl: string;
 
-      const content = completion.choices[0].message.content;
-      if (!content) {
-        throw new Error("Failed to generate robot characteristics");
+      try {
+        imageUrl = await generateRobotImage(robotData, logger);
+      } catch (imageError) {
+        logger.error("Failed to generate robot image:", imageError);
+        imageUrl = "https://robohash.org/" + robotData.name; // Use robohash as fallback
       }
 
-      logger.info("OpenAI response:", content);
-
-      const robotData = JSON.parse(content);
       const robotId = generateId("robot") as `rob_${string}`;
-
       const [robot] = await db
         .insert(RobotTable)
         .values({
@@ -108,13 +93,13 @@ export const createRobotRoute = new OpenAPIHono<{
           name: robotData.name,
           description: robotData.description,
           prompt,
+          imageUrl,
           createdBy: user.id,
           createdAt: new Date(),
         })
         .returning();
 
       logger.info("Created robot:", robot);
-
       return c.json(robot);
     } catch (error) {
       logger.error("Failed to create robot:", error);
@@ -125,6 +110,80 @@ export const createRobotRoute = new OpenAPIHono<{
     }
   }
 );
+
+// Helper function to generate robot data
+async function generateRobotData(openai: OpenAI, prompt: string, logger: any) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "system",
+        content: `You are a robot designer. Create a unique and creative robot based on the user's prompt.
+                 Focus on describing its unique characteristics, abilities, strengths, and potential weaknesses.
+                 Return a JSON object with:
+                 {
+                   "name": "Creative robot name",
+                   "description": "Detailed description of the robot's capabilities, design, and tactical considerations"
+                 }`,
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  });
+
+  const content = completion.choices[0].message.content;
+  if (!content) {
+    throw new Error("Failed to generate robot characteristics");
+  }
+
+  logger.info("OpenAI response:", content);
+  return JSON.parse(content);
+}
+
+// Helper function to generate robot image
+async function generateRobotImage(
+  robotData: { name: string; description: string },
+  logger: any
+): Promise<string> {
+  try {
+    const prompt = `Detailed technical illustration of a robot named ${robotData.name}. ${robotData.description}. Video game style, detailed mechanical parts, professional lighting, high quality render, 8k resolution, unreal engine style`;
+
+    logger.info("Attempting to generate image with prompt:", prompt);
+
+    const result = await mediaGen.generateImages({
+      prompt,
+      imageSize: "square_hd",
+      numImages: 1,
+    });
+
+    if (!result.length || !result[0].imageUrl) {
+      throw new Error("No image URL in generation response");
+    }
+
+    const imageUrl = result[0].imageUrl;
+    logger.info("Generated robot image:", imageUrl);
+    return imageUrl;
+  } catch (error) {
+    // Log detailed error information
+    logger.error("Robot image generation failed:", {
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
+      robotName: robotData.name,
+      robotDescription: robotData.description,
+    });
+
+    // Re-throw to be handled by the caller
+    throw error;
+  }
+}
 
 // Start Battle Route
 export const startBattleRoute = new OpenAPIHono<{

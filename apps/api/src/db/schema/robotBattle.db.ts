@@ -34,6 +34,7 @@ export const RobotTable = pgTable("robots", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(),
   prompt: text("prompt").notNull(),
+  imageUrl: text("image_url"),
   createdBy: varchar("created_by", { length: 255 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .defaultNow()
