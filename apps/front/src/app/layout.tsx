@@ -6,8 +6,6 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 import "stop-runaway-react-effects/hijack";
-import { ClientDashboard } from "./_lib/ClientDashboard";
-import { GlobalCatStats } from "./_lib/catLib/GlobalCatStats";
 
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -68,8 +66,7 @@ export default async function RootLayout({
       >
         <div id="main-content">
           <Providers cookies={cookies}>
-            <GlobalCatStats />
-            <ClientDashboard>{children}</ClientDashboard>
+            {children}
           </Providers>
           <Toaster position="top-center" className="!fixed !z-[9999]" />
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { BattlesList } from "@/app/_lib/robotLib/components/battle/BattleList";
 import { useGetUserRobots } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import type { RobotId } from "robot-sdk";
 import { CreateBattleRoom } from "./battle/CreateBattleRoom";
@@ -70,7 +71,6 @@ function UserRobots() {
           </CardContent>
           <CardFooter>
             <Button
-              onClick={() => selectRobotMutation.mutate(robot.id)}
               disabled={robot.id === data.selectedRobotId}
               variant={
                 robot.id === data.selectedRobotId ? "secondary" : "default"
@@ -89,17 +89,7 @@ function UserRobots() {
 }
 
 export function ClientDashboard() {
-  const { data: robotData } = useQuery({
-    queryKey: ["userRobots"],
-    queryFn: async () => {
-      const response = await apiClient.robotBattle.getUserRobots();
-      const json = await response.json();
-      return json as {
-        robots: Robot[];
-        selectedRobotId: string | null;
-      };
-    },
-  });
+  const userRobots = useGetUserRobots();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black">
@@ -134,13 +124,13 @@ export function ClientDashboard() {
               </p>
             </div>
             <CreateBattleRoom
-              selectedRobotId={robotData?.selectedRobotId ?? null}
+              selectedRobotId={userRobots.data?.selectedRobotId ?? null}
             />
           </div>
 
           <div className="mt-6">
-            {robotData?.selectedRobotId ? (
-              <BattleRoomList selectedRobotId={robotData.selectedRobotId} />
+            {userRobots.data?.selectedRobotId ? (
+              <BattlesList selectedRobotId={userRobots.data.selectedRobotId} />
             ) : (
               <div className="rounded-lg border border-dashed border-zinc-700 p-8 text-center">
                 <p className="text-zinc-400">

@@ -35,7 +35,7 @@ export function CreateRobot() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <label htmlFor="prompt" className="text-sm text-zinc-300">
-            Describe your robot's capabilities and appearance
+            Describe your robot
           </label>
           <Textarea
             id="prompt"

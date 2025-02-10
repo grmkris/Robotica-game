@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useCreateBattle } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { apiClient } from "@/lib/apiClient";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { RobotId } from "robot-sdk";
 
 interface CreateBattleRoomProps {
   selectedRobotId: string | null;
@@ -14,77 +14,20 @@ interface CreateRoomResponse {
   battleId: string | null;
 }
 
-interface RoomEventData {
-  room: {
-    id: string;
-    status: string;
-    battleId: string | null;
-  };
-}
-
 export function CreateBattleRoom({ selectedRobotId }: CreateBattleRoomProps) {
   const queryClient = useQueryClient();
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
   const router = useRouter();
 
-  const createRoomMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedRobotId) {
-        throw new Error("No robot selected");
-      }
-      const response = await apiClient.robotBattle.createRoom(selectedRobotId);
-      return response.json() as Promise<CreateRoomResponse>;
-    },
-    onSuccess: (data) => {
-      toast.success("Battle room created!", {
-        description: "Waiting for opponent...",
-      });
-      setCreatedRoomId(data.roomId);
-      queryClient.invalidateQueries({ queryKey: ["battleRooms"] });
-    },
-    onError: (error) => {
-      toast.error("Failed to create room", {
-        description: error.message,
-      });
-    },
-  });
-
-  // Listen for battle start
-  useEffect(() => {
-    if (!createdRoomId) return;
-
-    console.log("Setting up SSE listener for room:", createdRoomId);
-    const eventSource = apiClient.robotBattle.getRoomEvents(createdRoomId);
-
-    eventSource.onmessage = (event) => {
-      console.log("Received SSE event:", event.data);
-      const data = JSON.parse(event.data) as RoomEventData;
-      console.log("Parsed data:", data);
-
-      if (data.room.battleId) {
-        console.log("Got battleId, redirecting to:", data.room.battleId);
-        router.push(`/robot-battle/battle/${data.room.battleId}`);
-        eventSource.close();
-      }
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("SSE Error:", error);
-    };
-
-    return () => {
-      console.log("Cleaning up SSE listener");
-      eventSource.close();
-    };
-  }, [createdRoomId, router]);
+  const createBattleMutation = useCreateBattle();
 
   return (
     <Button
-      onClick={() => createRoomMutation.mutate()}
-      disabled={!selectedRobotId || createRoomMutation.isPending}
+      onClick={() => createBattleMutation.mutate({ robot1Id: RobotId.parse(selectedRobotId) })}
+      disabled={!selectedRobotId || createBattleMutation.isPending}
       className="w-full"
     >
-      {createRoomMutation.isPending
+      {createBattleMutation.isPending
         ? "Creating..."
         : createdRoomId
           ? "Waiting for opponent..."

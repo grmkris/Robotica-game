@@ -7,15 +7,15 @@ import {
 	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
-import type {
-	BattleId,
-	BattleRobotId,
-	RobotId,
-	RoundId,
-	StatsId,
-	UserId,
+import {
+	type BattleId,
+	type BattleRobotId,
+	type RobotId,
+	type RoundId,
+	type StatsId,
+	type UserId,
+	generateId,
 } from "robot-sdk";
-import { generateId } from "robot-sdk";
 import { z } from "zod";
 import { users } from "./users.db";
 
@@ -48,7 +48,8 @@ export const RobotTable = pgTable("robots", {
 	imageUrl: text("image_url"),
 	createdBy: varchar("created_by", { length: 255 })
 		.notNull()
-		.references(() => users.id),
+		.references(() => users.id)
+		.$type<UserId>(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
 		.defaultNow()
 		.notNull(),
@@ -69,6 +70,10 @@ export const BattleTable = pgTable("battles", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
 		.defaultNow()
 		.notNull(),
+	createdBy: varchar("created_by", { length: 255 })
+		.notNull()
+		.references(() => users.id)
+		.$type<UserId>(),
 });
 
 // Battle Robots table
@@ -98,6 +103,9 @@ export const BattleRoundsTable = pgTable("battle_rounds", {
 		.notNull()
 		.references(() => BattleTable.id),
 	roundNumber: integer("round_number").notNull(),
+	winnerId: varchar("winner_id", { length: 255 })
+		.$type<RobotId>()
+		.references(() => RobotTable.id).notNull(),
 	description: text("description").notNull(), // AI-generated battle narrative
 	tacticalAnalysis: text("tactical_analysis").notNull(), // AI's explanation of the outcome
 	createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -128,6 +136,10 @@ export const UserBattleStatsTable = pgTable(
 		selectedRobotId: varchar("selected_robot_id", { length: 255 })
 			.$type<RobotId>()
 			.references(() => RobotTable.id),
+		createdBy: varchar("created_by", { length: 255 })
+			.notNull()
+			.references(() => users.id)
+			.$type<UserId>(),
 	},
 	(table) => [uniqueIndex("user_battle_stats_user_id_idx").on(table.userId)],
 );

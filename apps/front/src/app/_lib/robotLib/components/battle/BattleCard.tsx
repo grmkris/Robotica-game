@@ -12,9 +12,13 @@ import type { BattleId, RobotId, UserId } from "robot-sdk";
 interface BattleCardProps {
   id: BattleId;
   createdBy: UserId;
-  robot1Id: RobotId;
+  robots: {
+    id: RobotId;
+    name: string;
+    imageUrl?: string | null | undefined;
+  }[];
   createdAt: Date;
-  expiresAt: Date;
+  completedAt: Date | null;
   onJoin: () => void;
   isLoading?: boolean;
 }
@@ -22,9 +26,9 @@ interface BattleCardProps {
 export function BattleCard({
   id,
   createdBy,
-  robot1Id,
+  robots,
   createdAt,
-  expiresAt,
+  completedAt,
   onJoin,
   isLoading,
 }: BattleCardProps) {
@@ -38,9 +42,9 @@ export function BattleCard({
       <CardContent className="space-y-2">
         <div className="text-sm text-muted-foreground">
           <p>Created by: {createdBy}</p>
-          <p>Robot: {robot1Id}</p>
+          <p>Robots: {robots.map((robot) => robot.name).join(", ")}</p>
           <p>Created: {formatDistanceToNow(new Date(createdAt))} ago</p>
-          <p>Expires in: {formatDistanceToNow(new Date(expiresAt))}</p>
+          <p>Completed: {completedAt ? formatDistanceToNow(new Date(completedAt)) : "Not completed"}</p>
         </div>
       </CardContent>
       <CardFooter>

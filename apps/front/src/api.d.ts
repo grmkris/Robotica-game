@@ -287,9 +287,18 @@ export declare const createRobotApi: (props: {
             };
             output: {
                 status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "WAITING" | "FAILED";
+                id: `bat${string}`;
+                createdBy: `user${string}`;
+                createdAt: string;
+                winnerId: `rob${string}` | null;
+                startedAt: string;
+                completedAt: string | null;
                 rounds: {
                     description: string;
+                    id: `rnd${string}`;
+                    winnerId: `rob${string}`;
                     roundNumber: number;
+                    tacticalAnalysis: string;
                 }[];
             };
             outputFormat: "json";
@@ -309,7 +318,9 @@ export declare const createRobotApi: (props: {
                 battles: {
                     status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "WAITING" | "FAILED";
                     id: `bat${string}`;
+                    createdBy: `user${string}`;
                     createdAt: string;
+                    completedAt: string | null;
                     robots: {
                         id: `rob${string}`;
                         name: string;
@@ -349,7 +360,9 @@ export declare const createRobotApi: (props: {
                     id: `rob${string}`;
                     name: string;
                     prompt: string;
+                    createdBy: `user${string}`;
                     createdAt: string;
+                    imageUrl?: string | null | undefined;
                 }[];
                 selectedRobotId: `rob${string}` | null;
             };

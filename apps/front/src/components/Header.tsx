@@ -1,17 +1,19 @@
 import { useAuth } from "@/app/auth/useAuth";
-import { Button } from "./ui/button";
-import { toast } from "sonner";
 import { shortenAddress } from "@/lib/utils";
 import Link from "next/link";
-
+import { toast } from "sonner";
+import { useDisconnect } from "wagmi";
+import { Button } from "./ui/button";
 export function Header() {
-  const { isAuthenticated, disconnectWallet, walletAddress } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const disconnect = useDisconnect();
 
   const handleLogout = async () => {
     try {
-      await disconnectWallet();
+      await disconnect.disconnectAsync();
       toast.success("Wallet disconnected");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to disconnect wallet");
     }
   };
@@ -23,9 +25,9 @@ export function Header() {
 
         {isAuthenticated && (
           <div className="flex items-center gap-4">
-            {walletAddress && (
+            {user?.wallets[0] && (
               <span className="font-mono text-sm text-zinc-400">
-                {shortenAddress(walletAddress)}
+                {shortenAddress(user.wallets[0].address)}
               </span>
             )}
             <Button

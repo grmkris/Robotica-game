@@ -2,7 +2,7 @@ import { useJoinBattle, useListBattles } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import type { BattleId, BattleStatus, RobotId, UserId } from "robot-sdk";
-import { BattleCard } from "./BattleRoomCard";
+import { BattleCard } from "./BattleCard";
 
 interface BattleRoom {
   id: BattleId;
@@ -47,7 +47,11 @@ export function BattlesList({
         {battles?.battles.map((room) => (
           <BattleCard
             key={room.id}
-            {...room}
+            id={room.id}
+            createdBy={room.createdBy}
+            robots={room.robots}
+            createdAt={new Date(room.createdAt)}
+            completedAt={room.completedAt ? new Date(room.completedAt) : null}
             onJoin={() =>
               joinBattle.mutate({
                 battleId: room.id,

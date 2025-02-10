@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Cat Agent App",
-    short_name: "Cat Agent",
-    description: "Your AI Cat Agent Assistant",
+    name: "Robotica",
+    short_name: "Robotica",
+    description: "AI fighting arena",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

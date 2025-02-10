@@ -51,6 +51,7 @@ const BattleRoundSchema = z.object({
   narrative: z.string(),
   actions: z.array(BattleActionSchema),
   tacticalAnalysis: z.string(),
+  winnerId: z.string(),
 });
 
 type RobotState = z.infer<typeof RobotStateSchema>;
@@ -227,6 +228,7 @@ const processRound = async (props: {
         roundNumber,
         description: roundResult.narrative,
         tacticalAnalysis: roundResult.tacticalAnalysis,
+        winnerId: RobotId.parse(roundResult.winnerId),
         createdAt: new Date(),
       });
     });

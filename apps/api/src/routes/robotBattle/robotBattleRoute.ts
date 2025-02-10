@@ -16,7 +16,7 @@ import type { Logger } from "cat-logger";
 import { createMediaGenClient } from "cat-media-gen";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
-import { BattleId, RobotId, type UserId, generateId } from "robot-sdk";
+import { BattleId, RobotId, RoundId, UserId, generateId } from "robot-sdk";
 
 // Add to the top of the file with other env variables
 const mediaGen = createMediaGenClient({ falApiKey: env.FAL_API_KEY });
@@ -224,9 +224,18 @@ export const getBattleByIdRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
+              id: BattleId,
               status: BattleStatus,
+              winnerId: RobotId.nullable(),
+              startedAt: z.coerce.date(),
+              completedAt: z.coerce.date().nullable(),
+              createdAt: z.coerce.date(),
+              createdBy: UserId,
               rounds: z.array(
                 z.object({
+                  id: RoundId,
+                  winnerId: RobotId,
+                  tacticalAnalysis: z.string(),
                   roundNumber: z.number(),
                   description: z.string(),
                 }),
@@ -242,15 +251,16 @@ export const getBattleByIdRoute = new OpenAPIHono<{
     const db = c.get("db");
 
     const battle = await db.query.BattleTable.findFirst({
-      where: eq(BattleTable.id, battleId as `bat_${string}`),
+      where: eq(BattleTable.id, battleId),
       with: {
-        rounds: true,
+        rounds: true
       },
     });
 
     if (!battle) {
       throw new HTTPException(404, { message: "Battle not found" });
     }
+
 
     return c.json(battle);
   },
@@ -278,6 +288,7 @@ export const getUserRobotsRoute = new OpenAPIHono<{
                   imageUrl: z.string().nullish(),
                   prompt: z.string(),
                   createdAt: z.string(),
+                  createdBy: UserId,
                 }),
               ),
               selectedRobotId: RobotId.nullable(),
@@ -331,6 +342,9 @@ export const battleEventsRoute = new OpenAPIHono<{
                 status: BattleStatus,
                 rounds: z.array(
                   z.object({
+                    id: RoundId,
+                    roundWinnerId: RobotId,
+                    tacticalAnalysis: z.string(),
                     roundNumber: z.number(),
                     description: z.string(),
                   }),
@@ -525,6 +539,7 @@ export const startBattleRoute = new OpenAPIHono<{
     const { robot1Id, robot2Id } = c.req.valid("json");
     const db = c.get("db");
     const logger = c.get("logger");
+    const user = validateUser(c);
 
     try {
       // Validate that both robots exist
@@ -548,6 +563,7 @@ export const startBattleRoute = new OpenAPIHono<{
         .values({
           id: battleId,
           status: "IN_PROGRESS",
+          createdBy: user.id,
         })
         .returning();
 
@@ -627,7 +643,7 @@ export const createBattleRoute = new OpenAPIHono<{
       const battleId = generateId("battle");
       const [battle] = await db
         .insert(BattleTable)
-        .values({ id: battleId, status: "IN_PROGRESS" })
+        .values({ id: battleId, status: "IN_PROGRESS", createdBy: user.id })
         .returning();
 
       // Insert battle robot
@@ -676,6 +692,8 @@ const listBattlesRoute = new OpenAPIHono<{
                   id: BattleId,
                   status: BattleStatus,
                   createdAt: z.coerce.date(),
+                  createdBy: UserId,
+                  completedAt: z.coerce.date().nullable(),
                   robots: z.array(
                     z.object({
                       id: RobotId,
@@ -721,11 +739,14 @@ const listBattlesRoute = new OpenAPIHono<{
       },
     });
 
+
     // Transform the data to match the response schema
     const formattedBattles = battles.map((battle) => ({
       id: battle.id,
       status: battle.status,
-      createdAt: battle.createdAt.toISOString(),
+      createdAt: battle.createdAt,
+      createdBy: battle.createdBy,
+      completedAt: battle.completedAt,
       robots: battle.battleRobots.map((br) => ({
         id: br.robot.id,
         name: br.robot.name,

@@ -4,10 +4,11 @@ import { BattleViewer } from "@/app/_lib/robotLib/components/battle/BattleViewer
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import type { BattleId } from "robot-sdk";
 
 export default function BattlePage() {
   const params = useParams();
-  const battleId = params.battleId as string;
+  const battleId = params.battleId as BattleId;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black">
