@@ -91,32 +91,43 @@ export const _resolveBattle = async (props: {
 
   let roundNumber = 1;
 
-  // Process rounds until we have a winner
-  while (Array.from(robotStates.values()).filter((r) => r.isAlive).length > 1) {
-    await processRound({
-      battleId,
-      roundNumber,
-      robotStates,
-      db,
-      logger,
-    });
-    roundNumber++;
-  }
-
-  // Update battle with winner
-  const winner = Array.from(robotStates.values()).find((r) => r.isAlive);
-  if (!winner) throw new Error("No winner found after battle");
-
-  await db
-    .update(BattleTable)
-    .set({
-      winnerId: RobotId.parse(winner.robotId),
-      status: "COMPLETED",
-      completedAt: new Date(),
+  // Create thread once before processing rounds
+  const threadId = `battle-${battleId}`;
+  return await literalClient
+    .thread({
+      id: threadId,
+      name: `Battle ${battleId}`,
+      metadata: { battleId },
     })
-    .where(eq(BattleTable.id, battleId));
+    .wrap(async () => {
+      // Process rounds until we have a winner
+      while (Array.from(robotStates.values()).filter((r) => r.isAlive).length > 1) {
+        await processRound({
+          battleId,
+          roundNumber,
+          robotStates,
+          db,
+          logger,
+          threadId,
+        });
+        roundNumber++;
+      }
 
-  return winner.robotId;
+      // Update battle with winner
+      const winner = Array.from(robotStates.values()).find((r) => r.isAlive);
+      if (!winner) throw new Error("No winner found after battle");
+
+      await db
+        .update(BattleTable)
+        .set({
+          winnerId: RobotId.parse(winner.robotId),
+          status: "COMPLETED",
+          completedAt: new Date(),
+        })
+        .where(eq(BattleTable.id, battleId));
+
+      return winner.robotId;
+    });
 };
 
 export const resolveBattle = async (props: {
@@ -148,86 +159,78 @@ const processRound = async (props: {
   robotStates: Map<string, RobotState>;
   db: db;
   logger: Logger;
+  threadId: string;
 }) => {
-  const { battleId, roundNumber, robotStates, db, logger } = props;
-  const threadId = `battle-${battleId}`;
+  const { battleId, roundNumber, robotStates, db, logger, threadId } = props;
 
-  return literalClient
-    .thread({
-      id: threadId,
-      name: `Battle ${battleId} Round ${roundNumber}`,
-      metadata: { battleId, roundNumber },
+  // Simulate the round
+  const roundResult = await literalClient
+    .step({
+      name: `Simulate Round ${roundNumber}`,
+      type: "llm",
+      metadata: {
+        battleId,
+        roundNumber,
+        operation: "simulate_round",
+      },
     })
     .wrap(async () => {
-      // Simulate the round
-      const roundResult = await literalClient
-        .step({
-          name: `Simulate Round ${roundNumber}`,
-          type: "llm",
-          metadata: {
-            battleId,
-            roundNumber,
-            operation: "simulate_round",
-          },
-        })
-        .wrap(async () => {
-          return await executeStepStructured<typeof BattleRoundSchema>({
-            stepName: "battle_round",
-            input: JSON.stringify({
-              roundNumber,
-              robotStates: Array.from(robotStates.values()),
-            }),
-            system: createBattlePrompt(roundNumber, robotStates),
-            logger,
-            providerConfig: {
-              apikey: env.GOOGLE_GEMINI_API_KEY,
-              modelId: "gemini-2.0-flash-exp",
-              provider: "google",
-            },
-            literalClient,
-            stepId: `round_${roundNumber}`,
-            output: {
-              outputSchema: BattleRoundSchema,
-              schemaDescription: "The battle round results",
-              schemaName: "BattleRound",
-              temperature: 0.7,
-            },
-          });
-        });
+      return await executeStepStructured<typeof BattleRoundSchema>({
+        stepName: "battle_round",
+        input: JSON.stringify({
+          roundNumber,
+          robotStates: Array.from(robotStates.values()),
+        }),
+        system: createBattlePrompt(roundNumber, robotStates),
+        logger,
+        providerConfig: {
+          apikey: env.GOOGLE_GEMINI_API_KEY,
+          modelId: "gemini-2.0-flash-exp",
+          provider: "google",
+        },
+        literalClient,
+        stepId: `round_${roundNumber}`,
+        output: {
+          outputSchema: BattleRoundSchema,
+          schemaDescription: "The battle round results",
+          schemaName: "BattleRound",
+          temperature: 0.7,
+        },
+      });
+    });
 
-      // Apply damage and update states
-      await literalClient
-        .step({
-          name: "Apply Round Results",
-          type: "run",
-          input: roundResult,
-          metadata: {
-            operation: "apply_damage",
-          },
-        })
-        .wrap(async () => {
-          // Apply damages to robot states
-          for (const action of roundResult.actions) {
-            const state = robotStates.get(action.defenderId);
-            if (state?.isAlive) {
-              state.currentHealth -= action.damage;
-              state.status.push(action.description);
-              if (state.currentHealth <= 0) {
-                state.isAlive = false;
-                state.status.push("ELIMINATED");
-              }
-            }
+  // Apply damage and update states
+  await literalClient
+    .step({
+      name: "Apply Round Results",
+      type: "run",
+      input: roundResult,
+      metadata: {
+        operation: "apply_damage",
+      },
+    })
+    .wrap(async () => {
+      // Apply damages to robot states
+      for (const action of roundResult.actions) {
+        const state = robotStates.get(action.defenderId);
+        if (state?.isAlive) {
+          state.currentHealth -= action.damage;
+          state.status.push(action.description);
+          if (state.currentHealth <= 0) {
+            state.isAlive = false;
+            state.status.push("ELIMINATED");
           }
+        }
+      }
 
-          // Save round results to database
-          await db.insert(BattleRoundsTable).values({
-            battleId,
-            roundNumber,
-            description: roundResult.narrative,
-            tacticalAnalysis: roundResult.tacticalAnalysis,
-            createdAt: new Date(),
-          });
-        });
+      // Save round results to database
+      await db.insert(BattleRoundsTable).values({
+        battleId,
+        roundNumber,
+        description: roundResult.narrative,
+        tacticalAnalysis: roundResult.tacticalAnalysis,
+        createdAt: new Date(),
+      });
     });
 };
 
