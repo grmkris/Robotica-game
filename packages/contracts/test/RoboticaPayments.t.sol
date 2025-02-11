@@ -160,6 +160,12 @@ contract RoboticaPaymentsTest is Test {
         address winner = makeAddr("winner");
         uint256 prizeAmount = 0.5 ether;
 
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         // Fund contract with prize amount
         vm.deal(address(payments), prizeAmount);
 
@@ -194,9 +200,16 @@ contract RoboticaPaymentsTest is Test {
         // Setup test account and prize amount
         address winner = makeAddr("winner");
         uint256 prizeAmount = 0.5 ether;
+
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         vm.deal(address(payments), prizeAmount * 2); // Fund for two potential claims
 
-        // Generate signature for initial nonce (0)
+        // Generate signature for initial nonce
         bytes memory signature = _generateClaimPrizeSignature(
             winner,
             prizeAmount
@@ -216,6 +229,13 @@ contract RoboticaPaymentsTest is Test {
         // Setup test account and prize amount
         address winner = makeAddr("winner");
         uint256 prizeAmount = 0.5 ether;
+
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         vm.deal(address(payments), prizeAmount);
 
         // Generate invalid signature (random bytes)
@@ -235,12 +255,26 @@ contract RoboticaPaymentsTest is Test {
         // Setup test account and prize amount
         address winner = makeAddr("winner");
         uint256 prizeAmount = 0.5 ether;
+
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         vm.deal(address(payments), prizeAmount);
 
         // Generate signature with wrong private key
         uint256 wrongPrivateKey = 0xB0B;
         bytes32 messageHash = keccak256(
-            abi.encodePacked(winner, prizeAmount, "CLAIM", address(payments))
+            abi.encodePacked(
+                winner,
+                uint256(1),
+                prizeAmount,
+                "CLAIM",
+                address(payments),
+                payments.getNonce(winner)
+            )
         );
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
             messageHash
@@ -282,6 +316,13 @@ contract RoboticaPaymentsTest is Test {
         address winner = makeAddr("winner");
         uint256 signedAmount = 0.5 ether;
         uint256 attemptedAmount = 1 ether;
+
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         vm.deal(address(payments), attemptedAmount);
 
         // Generate signature for smaller amount
@@ -300,6 +341,13 @@ contract RoboticaPaymentsTest is Test {
         // Setup test account and prize amount
         address winner = makeAddr("winner");
         uint256 prizeAmount = 0.5 ether;
+
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         vm.deal(address(payments), prizeAmount);
 
         // Deploy a second contract instance
@@ -312,9 +360,11 @@ contract RoboticaPaymentsTest is Test {
         bytes32 messageHash = keccak256(
             abi.encodePacked(
                 winner,
+                uint256(1),
                 prizeAmount,
                 "CLAIM",
-                address(otherContract)
+                address(otherContract),
+                payments.getNonce(winner)
             )
         );
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
@@ -385,6 +435,12 @@ contract RoboticaPaymentsTest is Test {
         address winner = makeAddr("winner");
         uint256 prizeAmount = 0.1 ether;
 
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         // Fund contract for multiple prizes
         vm.deal(address(payments), prizeAmount * 3);
 
@@ -428,6 +484,12 @@ contract RoboticaPaymentsTest is Test {
         address winner = makeAddr("winner");
         uint256 largeAmount = 1000 ether;
 
+        // First enter the game
+        vm.deal(winner, ENTRY_FEE);
+        bytes memory enterSignature = _generateEnterGameSignature(winner);
+        vm.prank(winner);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
+
         // Fund contract with large amount
         vm.deal(address(payments), largeAmount);
 
@@ -454,14 +516,19 @@ contract RoboticaPaymentsTest is Test {
 
         // Generate signatures
         bytes memory enterSig = _generateEnterGameSignature(player);
+
+        // Enter game first
+        vm.prank(player);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSig);
+
+        // Generate claim signature
         bytes memory claimSig = _generateClaimPrizeSignature(
             player,
             prizeAmount
         );
 
-        // Enter game
-        vm.prank(player);
-        payments.enterGame{value: ENTRY_FEE}(1, enterSig);
+        // Fund contract for prize
+        vm.deal(address(payments), prizeAmount);
 
         // Try to reuse enter signature for claim
         vm.prank(player);
@@ -471,7 +538,7 @@ contract RoboticaPaymentsTest is Test {
         // Try to use claim signature for enter
         vm.deal(player, ENTRY_FEE);
         vm.prank(player);
-        vm.expectRevert("Invalid signature");
+        vm.expectRevert("Signature already used");
         payments.enterGame{value: ENTRY_FEE}(1, claimSig);
     }
 

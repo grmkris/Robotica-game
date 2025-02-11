@@ -31,8 +31,8 @@ contract RoboticaPayments {
         bytes memory signature
     ) external payable {
         require(msg.value == entryFee, "Must send exact entry fee");
-        require(!playerInGame[gameId][msg.sender], "Already in this game");
-
+        require(!playerInGame[gameId][msg.sender], "Signature already used");
+        
         bytes32 messageHash = keccak256(
             abi.encodePacked(
                 msg.sender,
@@ -61,8 +61,8 @@ contract RoboticaPayments {
         uint256 amount,
         bytes memory signature
     ) external {
+        require(amount > 0, "Prize amount must be greater than zero");
         require(playerInGame[gameId][msg.sender], "Not in this game");
-        require(amount > 0, "No winnings to claim");
 
         bytes32 messageHash = keccak256(
             abi.encodePacked(
