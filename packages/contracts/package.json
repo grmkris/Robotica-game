@@ -11,7 +11,8 @@
     "@types/bun": "^1.2.1",
     "bun": "^1.2.1",
     "forge-std": "github:foundry-rs/forge-std#v1.8.1",
-    "solhint": "^5.0.5"
+    "solhint": "^5.0.5",
+    "dotenv": "^16.0.3"
   },
   "keywords": [
     "blockchain",
@@ -34,7 +35,7 @@
     "test:coverage": "forge coverage",
     "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
     "deploy:local": "forge script script/DeployRobotica.s.sol:DeployRobotica --fork-url http://localhost:8545 -vvvv",
-    "deploy:sepolia": "forge script script/DeployRobotica.s.sol:DeployRobotica --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify -vvvv",
-    "deploy:mainnet": "forge script script/DeployRobotica.s.sol:DeployRobotica --rpc-url $MAINNET_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify -vvvv"
+    "deploy:sepolia": "forge script script/DeployRobotica.s.sol:DeployRobotica --fork-url $SEPOLIA_RPC_URL --rpc-url $SEPOLIA_RPC_URL --mnemonic-passphrases $SIGNER_MNEMONIC --broadcast --verify -vvvv",
+    "deploy:avalanche": "forge script script/DeployRobotica.s.sol:DeployRobotica --fork-url $AVALANCHE_RPC_URL --rpc-url $AVALANCHE_RPC_URL --mnemonic-passphrases $SIGNER_MNEMONIC --broadcast --verify -vvvv"
   }
 }

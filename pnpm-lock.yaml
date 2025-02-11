@@ -563,6 +563,28 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
 
+  packages/robot-onchain:
+    dependencies:
+      nanoid:
+        specifier: ^5.0.9
+        version: 5.0.9
+      viem:
+        specifier: ^2.22.17
+        version: 2.22.17(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)(zod@3.24.1)
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 1.9.4
+        version: 1.9.4
+      '@types/node':
+        specifier: ^22.12.0
+        version: 22.12.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
+
   packages/robot-sdk:
     dependencies:
       nanoid:

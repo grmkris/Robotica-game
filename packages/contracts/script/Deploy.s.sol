@@ -8,8 +8,12 @@ import {BaseScript} from "./Base.s.sol";
 contract Deploy is BaseScript {
     function run() public broadcast returns (RoboticaPayments payments) {
         // Read deployment parameters from environment variables
-        address signerAddress = vm.envOr("SIGNER_ADDRESS", broadcaster);
-        uint256 entryFee = vm.envOr("ENTRY_FEE", 0.1 ether);
+        address signerAddress = vm.envAddress("SIGNER_ADDRESS");
+        uint256 entryFee = vm.envUint("ENTRY_FEE");
+
+        // If environment variables are not set, use default values
+        if (signerAddress == address(0)) signerAddress = broadcaster;
+        if (entryFee == 0) entryFee = 0.1 ether;
 
         // Deploy the contract
         payments = new RoboticaPayments(signerAddress, entryFee);
