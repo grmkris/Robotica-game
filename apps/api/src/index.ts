@@ -3,7 +3,6 @@ import { logger } from "@/logger";
 import { createRobotApi } from "@/robotApi";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { Hono } from "hono";
-import { robotBattleApp } from "./routes/robotBattle/robotBattleRoute";
 
 // Create Hono app
 
@@ -18,8 +17,6 @@ const initApp = async () => {
 	logger.info("Robot Battle API initialized successfully");
 
 	const app = new Hono().route("/", robotApi);
-
-	app.route("/robotica", robotBattleApp);
 
 	return app;
 };

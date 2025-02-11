@@ -210,11 +210,11 @@ export const getBattleByIdRoute = new OpenAPIHono<{
 }>().openapi(
   createRoute({
     method: "get",
-    path: "{battleId}", // Updated from battle-by-id
+    path: ":battleId",
     tags: ["RobotBattle"],
     summary: "Get a battle by its id",
     request: {
-      params: z.object({ // Changed from query to params
+      params: z.object({
         battleId: BattleId,
       }),
     },
@@ -323,11 +323,11 @@ export const battleEventsRoute = new OpenAPIHono<{
 }>().openapi(
   createRoute({
     method: "get",
-    path: "{battleId}/events", // Updated from battle-events/{battleId}
+    path: ":battleId/events",
     tags: ["RobotBattle"],
     summary: "Stream battle events in real-time",
     request: {
-      params: z.object({ // Added params
+      params: z.object({
         battleId: BattleId,
       }),
     },
@@ -440,11 +440,11 @@ export const joinBattleRoute = new OpenAPIHono<{
 }>().openapi(
   createRoute({
     method: "post",
-    path: "{battleId}/join", // Updated from join-battle
+    path: ":battleId/join",
     tags: ["RobotBattle"],
     summary: "Join a battle",
     request: {
-      params: z.object({ // Changed from body to params + body
+      params: z.object({
         battleId: BattleId,
       }),
       body: {
@@ -471,8 +471,8 @@ export const joinBattleRoute = new OpenAPIHono<{
     },
   }),
   async (c) => {
-    const body = await c.req.json();
-    const { battleId, robotId } = body;
+    const { battleId } = c.req.valid("param");
+    const { robotId } = c.req.valid("json");
     const db = c.get("db");
     const logger = c.get("logger");
 
@@ -504,11 +504,11 @@ export const startBattleRoute = new OpenAPIHono<{
 }>().openapi(
   createRoute({
     method: "post",
-    path: "{battleId}/start", // Updated from start-battle
+    path: ":battleId/start",
     tags: ["RobotBattle"],
     summary: "Start a battle between two robots",
     request: {
-      params: z.object({ // Added params
+      params: z.object({
         battleId: BattleId,
       }),
       body: {
@@ -767,13 +767,12 @@ const listBattlesRoute = new OpenAPIHono<{
 // Refactor routes with better RESTful patterns
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   // Robots resource
-  .route("/robots", createRobotRoute) // POST /robots
-  .route("/robots", getUserRobotsRoute) // GET /robots
+  .route("/robots", createRobotRoute)        // POST /robots
+  .route("/robots", getUserRobotsRoute)      // GET /robots
 
-  // Battles resource
-  .route("/battles", createBattleRoute) // POST /battles
-  .route("/battles", listBattlesRoute) // GET /battles
-  .route("/battles/{battleId}", getBattleByIdRoute) // GET /battles/:battleId
-  .route("/battles/{battleId}/join", joinBattleRoute) // POST /battles/:battleId/join
-  .route("/battles/{battleId}/start", startBattleRoute) // POST /battles/:battleId/start
-  .route("/battles/{battleId}/events", battleEventsRoute); // GET /battles/:battleId/events
+  // Battles resource 
+  .route("/battles", createBattleRoute)      // POST /battles
+  .route("/battles", getBattleByIdRoute)  // GET /battles/:battleId
+  .route("/battles", joinBattleRoute)  // POST /battles/:battleId/join
+  .route("/battles", startBattleRoute)  // POST /battles/:battleId/start
+  .route("/battles", battleEventsRoute); // GET /battles/:battleId/events
