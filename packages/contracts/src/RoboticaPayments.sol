@@ -10,8 +10,15 @@ contract RoboticaPayments {
 
     address public signerAddress;
     uint256 public entryFee;
-    mapping(bytes32 => bool) public usedEnterSignatures;
-    mapping(bytes32 => bool) public usedClaimSignatures;
+    mapping(address => uint256) private _nonces;
+    mapping(uint256 => mapping(address => bool)) public playerInGame;
+
+    event PlayerEntered(uint256 indexed gameId, address indexed player);
+    event PrizeClaimed(
+        uint256 indexed gameId,
+        address indexed player,
+        uint256 amount
+    );
 
     constructor(address _signerAddress, uint256 _entryFee) {
         require(_entryFee > 0, "Entry fee must be greater than zero");
@@ -19,38 +26,48 @@ contract RoboticaPayments {
         entryFee = _entryFee;
     }
 
-    // Players need signature to enter
-    function enterGame(bytes memory signature) external payable {
+    function enterGame(
+        uint256 gameId,
+        bytes memory signature
+    ) external payable {
         require(msg.value == entryFee, "Must send exact entry fee");
+        require(!playerInGame[gameId][msg.sender], "Already in this game");
 
         bytes32 messageHash = keccak256(
-            abi.encodePacked(msg.sender, "ENTER", address(this))
+            abi.encodePacked(
+                msg.sender,
+                gameId,
+                "ENTER",
+                address(this),
+                _getNonce(msg.sender)
+            )
         );
 
         bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
 
-        // Check signature validity first
         require(
             ECDSA.recover(ethSignedMessageHash, signature) == signerAddress,
             "Invalid signature"
         );
 
-        // Then check if it's been used
-        require(
-            !usedEnterSignatures[ethSignedMessageHash],
-            "Signature already used"
-        );
+        playerInGame[gameId][msg.sender] = true;
+        _incrementNonce(msg.sender);
 
-        usedEnterSignatures[ethSignedMessageHash] = true;
-        // Emit event or additional logic
+        emit PlayerEntered(gameId, msg.sender);
     }
 
-    function claimPrize(uint256 amount, bytes memory signature) external {
-        require(amount > 0, "Prize amount must be greater than zero");
+    function claimPrize(
+        uint256 gameId,
+        uint256 amount,
+        bytes memory signature
+    ) external {
+        require(playerInGame[gameId][msg.sender], "Not in this game");
+        require(amount > 0, "No winnings to claim");
 
         bytes32 messageHash = keccak256(
             abi.encodePacked(
                 msg.sender,
+                gameId,
                 amount,
                 "CLAIM",
                 address(this),
@@ -60,25 +77,16 @@ contract RoboticaPayments {
 
         bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
 
-        // Check signature validity first
         require(
             ECDSA.recover(ethSignedMessageHash, signature) == signerAddress,
             "Invalid signature"
         );
 
-        // Then check if it's been used
-        require(
-            !usedClaimSignatures[ethSignedMessageHash],
-            "Signature already used"
-        );
-
-        usedClaimSignatures[ethSignedMessageHash] = true;
         _incrementNonce(msg.sender);
+
+        emit PrizeClaimed(gameId, msg.sender, amount);
         payable(msg.sender).transfer(amount);
     }
-
-    // Add nonce tracking
-    mapping(address => uint256) private _nonces;
 
     function _getNonce(address account) internal view returns (uint256) {
         return _nonces[account];
@@ -88,7 +96,6 @@ contract RoboticaPayments {
         _nonces[account]++;
     }
 
-    // Add view function to get current nonce for an address
     function getNonce(address account) external view returns (uint256) {
         return _nonces[account];
     }

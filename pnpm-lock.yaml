@@ -101,6 +101,9 @@ importers:
       resend:
         specifier: 4.1.1
         version: 4.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      robot-onchain:
+        specifier: workspace:*
+        version: link:../../packages/robot-onchain
       robot-sdk:
         specifier: workspace:*
         version: link:../../packages/robot-sdk
@@ -321,6 +324,9 @@ importers:
       resend:
         specifier: 4.1.1
         version: 4.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      robot-onchain:
+        specifier: workspace:*
+        version: link:../../packages/robot-onchain
       robot-sdk:
         specifier: workspace:*
         version: link:../../packages/robot-sdk
@@ -519,6 +525,9 @@ importers:
       bun:
         specifier: ^1.2.1
         version: 1.2.1
+      dotenv:
+        specifier: ^16.0.3
+        version: 16.4.7
       forge-std:
         specifier: github:foundry-rs/forge-std#v1.8.1
         version: https://codeload.github.com/foundry-rs/forge-std/tar.gz/bb4ceea94d6f10eeb5b41dc2391c6c8bf8e734ef

@@ -38,7 +38,7 @@ contract RoboticaPaymentsTest is Test {
 
         // Enter game as player
         vm.prank(player);
-        payments.enterGame{value: ENTRY_FEE}(signature);
+        payments.enterGame{value: ENTRY_FEE}(1, signature);
 
         // Assert contract balance increased
         assertEq(
@@ -59,7 +59,7 @@ contract RoboticaPaymentsTest is Test {
         // Try to enter with incorrect fee
         vm.prank(player);
         vm.expectRevert("Must send exact entry fee");
-        payments.enterGame{value: ENTRY_FEE - 0.01 ether}(signature);
+        payments.enterGame{value: ENTRY_FEE - 0.01 ether}(1, signature);
     }
 
     function test_EnterGame_UsedSignature() public {
@@ -72,12 +72,12 @@ contract RoboticaPaymentsTest is Test {
 
         // First entry should succeed
         vm.prank(player);
-        payments.enterGame{value: ENTRY_FEE}(signature);
+        payments.enterGame{value: ENTRY_FEE}(1, signature);
 
         // Second entry with same signature should fail
         vm.prank(player);
         vm.expectRevert("Signature already used");
-        payments.enterGame{value: ENTRY_FEE}(signature);
+        payments.enterGame{value: ENTRY_FEE}(1, signature);
     }
 
     function test_EnterGame_InvalidSignature() public {
@@ -95,7 +95,7 @@ contract RoboticaPaymentsTest is Test {
         // Attempt to enter with invalid signature
         vm.prank(player);
         vm.expectRevert("Invalid signature");
-        payments.enterGame{value: ENTRY_FEE}(invalidSignature);
+        payments.enterGame{value: ENTRY_FEE}(1, invalidSignature);
     }
 
     function test_EnterGame_WrongSigner() public {
@@ -121,7 +121,7 @@ contract RoboticaPaymentsTest is Test {
 
         // Attempt to enter with wrong signature
         vm.expectRevert("Invalid signature");
-        payments.enterGame{value: ENTRY_FEE}(wrongSignature);
+        payments.enterGame{value: ENTRY_FEE}(1, wrongSignature);
     }
 
     function test_EnterGame_WrongContract() public {
@@ -151,7 +151,7 @@ contract RoboticaPaymentsTest is Test {
         // Attempt to use signature meant for other contract
         vm.prank(player);
         vm.expectRevert("Invalid signature");
-        payments.enterGame{value: ENTRY_FEE}(wrongContractSignature);
+        payments.enterGame{value: ENTRY_FEE}(1, wrongContractSignature);
     }
 
     // ======== Claim Prize Tests ========
@@ -175,7 +175,7 @@ contract RoboticaPaymentsTest is Test {
 
         // Claim prize as winner
         vm.prank(winner);
-        payments.claimPrize(prizeAmount, signature);
+        payments.claimPrize(1, prizeAmount, signature);
 
         // Assert balances changed correctly
         assertEq(
@@ -204,12 +204,12 @@ contract RoboticaPaymentsTest is Test {
 
         // First claim should succeed
         vm.prank(winner);
-        payments.claimPrize(prizeAmount, signature);
+        payments.claimPrize(1, prizeAmount, signature);
 
         // Second claim with same signature should fail because nonce has increased
         vm.prank(winner);
         vm.expectRevert("Invalid signature");
-        payments.claimPrize(prizeAmount, signature);
+        payments.claimPrize(1, prizeAmount, signature);
     }
 
     function test_ClaimPrize_InvalidSignature() public {
@@ -228,7 +228,7 @@ contract RoboticaPaymentsTest is Test {
         // Attempt to claim with invalid signature
         vm.prank(winner);
         vm.expectRevert("Invalid signature");
-        payments.claimPrize(prizeAmount, invalidSignature);
+        payments.claimPrize(1, prizeAmount, invalidSignature);
     }
 
     function test_ClaimPrize_WrongSigner() public {
@@ -254,7 +254,7 @@ contract RoboticaPaymentsTest is Test {
         // Attempt to claim with wrong signature
         vm.prank(winner);
         vm.expectRevert("Invalid signature");
-        payments.claimPrize(prizeAmount, wrongSignature);
+        payments.claimPrize(1, prizeAmount, wrongSignature);
     }
 
     function test_ClaimPrize_InsufficientBalance() public {
@@ -274,7 +274,7 @@ contract RoboticaPaymentsTest is Test {
         // Attempt to claim more than contract balance
         vm.prank(winner);
         vm.expectRevert(); // This matches the low-level revert from transfer()
-        payments.claimPrize(prizeAmount, signature);
+        payments.claimPrize(1, prizeAmount, signature);
     }
 
     function test_ClaimPrize_WrongAmount() public {
@@ -293,7 +293,7 @@ contract RoboticaPaymentsTest is Test {
         // Attempt to claim larger amount
         vm.prank(winner);
         vm.expectRevert("Invalid signature");
-        payments.claimPrize(attemptedAmount, signature);
+        payments.claimPrize(1, attemptedAmount, signature);
     }
 
     function test_ClaimPrize_WrongContract() public {
@@ -329,7 +329,7 @@ contract RoboticaPaymentsTest is Test {
         // Attempt to use signature meant for other contract
         vm.prank(winner);
         vm.expectRevert("Invalid signature");
-        payments.claimPrize(prizeAmount, wrongContractSignature);
+        payments.claimPrize(1, prizeAmount, wrongContractSignature);
     }
 
     // ======== Integration Tests ========
@@ -342,7 +342,7 @@ contract RoboticaPaymentsTest is Test {
         // Enter game
         bytes memory enterSignature = _generateEnterGameSignature(player);
         vm.prank(player);
-        payments.enterGame{value: ENTRY_FEE}(enterSignature);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSignature);
 
         // Fund contract for prize
         vm.deal(address(payments), prizeAmount);
@@ -353,7 +353,7 @@ contract RoboticaPaymentsTest is Test {
             prizeAmount
         );
         vm.prank(player);
-        payments.claimPrize(prizeAmount, claimSignature);
+        payments.claimPrize(1, prizeAmount, claimSignature);
 
         assertEq(player.balance, prizeAmount, "Prize not received correctly");
     }
@@ -370,7 +370,7 @@ contract RoboticaPaymentsTest is Test {
         for (uint i = 0; i < 3; i++) {
             bytes memory signature = _generateEnterGameSignature(players[i]);
             vm.prank(players[i]);
-            payments.enterGame{value: ENTRY_FEE}(signature);
+            payments.enterGame{value: ENTRY_FEE}(1, signature);
         }
 
         assertEq(
@@ -395,7 +395,7 @@ contract RoboticaPaymentsTest is Test {
                 prizeAmount
             );
             vm.prank(winner);
-            payments.claimPrize(prizeAmount, signature);
+            payments.claimPrize(1, prizeAmount, signature);
         }
 
         assertEq(
@@ -420,7 +420,7 @@ contract RoboticaPaymentsTest is Test {
         bytes memory signature = _generateClaimPrizeSignature(winner, 0);
         vm.prank(winner);
         vm.expectRevert("Prize amount must be greater than zero");
-        payments.claimPrize(0, signature);
+        payments.claimPrize(1, 0, signature);
     }
 
     function test_EdgeCase_LargePrize() public {
@@ -437,7 +437,7 @@ contract RoboticaPaymentsTest is Test {
             largeAmount
         );
         vm.prank(winner);
-        payments.claimPrize(largeAmount, signature);
+        payments.claimPrize(1, largeAmount, signature);
 
         assertEq(
             winner.balance,
@@ -461,26 +461,35 @@ contract RoboticaPaymentsTest is Test {
 
         // Enter game
         vm.prank(player);
-        payments.enterGame{value: ENTRY_FEE}(enterSig);
+        payments.enterGame{value: ENTRY_FEE}(1, enterSig);
 
         // Try to reuse enter signature for claim
         vm.prank(player);
         vm.expectRevert("Invalid signature");
-        payments.claimPrize(prizeAmount, enterSig);
+        payments.claimPrize(1, prizeAmount, enterSig);
 
         // Try to use claim signature for enter
         vm.deal(player, ENTRY_FEE);
         vm.prank(player);
         vm.expectRevert("Invalid signature");
-        payments.enterGame{value: ENTRY_FEE}(claimSig);
+        payments.enterGame{value: ENTRY_FEE}(1, claimSig);
     }
 
     // ======== Helper Functions ========
     function _generateEnterGameSignature(
         address player
     ) internal view returns (bytes memory) {
+        // Add gameId (using 1 as default for tests)
+        uint256 gameId = 1;
+
         bytes32 messageHash = keccak256(
-            abi.encodePacked(player, "ENTER", address(payments))
+            abi.encodePacked(
+                player,
+                gameId,
+                "ENTER",
+                address(payments),
+                payments.getNonce(player)
+            )
         );
 
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
@@ -497,9 +506,13 @@ contract RoboticaPaymentsTest is Test {
         address winner,
         uint256 amount
     ) internal view returns (bytes memory) {
+        // Add gameId (using 1 as default for tests)
+        uint256 gameId = 1;
+
         bytes32 messageHash = keccak256(
             abi.encodePacked(
                 winner,
+                gameId,
                 amount,
                 "CLAIM",
                 address(payments),
