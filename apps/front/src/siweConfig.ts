@@ -108,6 +108,7 @@ export const siweConfig = createSIWEConfig({
   nonceRefetchIntervalMs: 1000 * 60 * 5, // 5 minutes
   onSignIn: async () => {
     console.log("onSignIn");
+    window.location.href = "/dashboard";
   },
   onSignOut: async () => {
     console.log("onSignOut");

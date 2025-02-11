@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --font-sans: 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: "Inter", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
 
     --background: 220 44% 100%;
     --foreground: 220 67% 0%;
@@ -88,7 +88,7 @@
     font-feature-settings: "ss01";
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    background-image: url("/background.jpg");
+    background-image: url("/background.png");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

@@ -1,53 +1,33 @@
-import { useAuth } from "@/app/auth/useAuth";
-import { shortenAddress } from "@/lib/utils";
-import Link from "next/link";
-import { toast } from "sonner";
-import { useDisconnect } from "wagmi";
-import { Button } from "./ui/button";
-export function Header() {
-  const { isAuthenticated, user, isLoading } = useAuth();
-  const disconnect = useDisconnect();
+"use client";
 
-  const handleLogout = async () => {
-    try {
-      await disconnect.disconnectAsync();
-      toast.success("Wallet disconnected");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to disconnect wallet");
-    }
-  };
+import { ConnectWallet } from "./ConnectWallet";
+import Link from "next/link";
+import { useAuth } from "@/app/auth/useAuth";
+import { Button } from "./ui/button";
+
+interface HeaderProps {
+  onEnterArena?: () => void;
+}
+
+export function Header({ onEnterArena }: HeaderProps) {
+  const { isAuthenticated } = useAuth();
 
   return (
-    <header className="w-full border-b border-zinc-800 bg-zinc-900/50 p-4 backdrop-blur-sm">
-      <div className="container mx-auto flex items-center justify-between">
-        <h1 className="text-xl font-bold text-cyan-400">Robot Battle Arena</h1>
-
-        {isAuthenticated && (
-          <div className="flex items-center gap-4">
-            {user?.wallets[0] && (
-              <span className="font-mono text-sm text-zinc-400">
-                {shortenAddress(user.wallets[0].address)}
-              </span>
-            )}
-            <Button
-              variant="destructive"
-              onClick={handleLogout}
-              className="hover:bg-red-600"
-            >
-              Disconnect Wallet
-            </Button>
-          </div>
-        )}
-
-        <nav className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="text-foreground transition-colors hover:text-primary"
+    <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-6 py-4 backdrop-blur-sm">
+      <Link href="/" className="text-xl font-bold text-cyan-400">
+        Robot Battle Arena
+      </Link>
+      <div className="flex items-center gap-4">
+        {isAuthenticated ? (
+          <Button
+            onClick={onEnterArena}
+            className="transform rounded-lg bg-cyan-500 px-6 py-2 text-sm font-bold text-black shadow-lg shadow-cyan-500/50 transition-all duration-200 hover:scale-105 hover:bg-cyan-600"
           >
-            Robot Battle
-          </Link>
-        </nav>
+            Enter Arena
+          </Button>
+        ) : (
+          <ConnectWallet />
+        )}
       </div>
     </header>
   );
