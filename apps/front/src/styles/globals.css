@@ -94,10 +94,17 @@
     font-feature-settings: "ss01";
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    background-image: url("/background.png");
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+      url("/background.png");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    min-height: 100vh;
+    background-attachment: fixed;
+    @media (min-width: 1920px) {
+      background-size: contain;
+      background-color: #0a192f;
+    }
   }
   .dark {
     --sidebar-background: 240 5.9% 10%;
