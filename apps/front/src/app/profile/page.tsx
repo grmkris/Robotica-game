@@ -1,12 +1,17 @@
 "use client";
 
 import { useAuth } from "@/app/auth/useAuth";
+import { IsometricLoader } from "../_lib/robotLib/components/IsometricLoader";
 
 export default function ProfilePage() {
   const { user } = useAuth();
 
   if (!user) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <IsometricLoader />
+      </div>
+    );
   }
 
   return (

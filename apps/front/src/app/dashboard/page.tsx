@@ -8,6 +8,7 @@ import { useGetUserRobots } from "../_lib/robotLib/robotHooks";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { IsometricLoader } from "../_lib/robotLib/components/IsometricLoader";
 
 export default function DashboardPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -22,8 +23,8 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="text-xl text-cyan-400">Loading...</div>
+      <div className="flex h-screen items-center justify-center">
+        <IsometricLoader />
       </div>
     );
   }

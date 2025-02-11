@@ -6,51 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { IsometricLoader } from "./IsometricLoader";
 
-// Cyberpunk loader component
-function CyberpunkLoader() {
-  return (
-    <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center backdrop-blur-sm">
-      <motion.div
-        className="relative h-20 w-20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        {[...Array(3)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute inset-0 rounded-md border-2 border-cyan-500"
-            initial={{ rotate: 0 }}
-            animate={{
-              rotate: 360,
-              scale: [1, 1.2, 1],
-              opacity: [0.5, 1, 0.5],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              delay: i * 0.2,
-              ease: "linear",
-            }}
-            style={{
-              borderRadius: "10%",
-              boxShadow: "0 0 15px var(--neon-cyan)",
-            }}
-          />
-        ))}
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center font-mono text-sm text-cyan-400"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          CREATING
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
-
-export function CreateRobot() {
+export const CreateRobot = () => {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const createRobot = useCreateRobot();
@@ -86,36 +44,48 @@ export function CreateRobot() {
   );
 
   return (
-    <div className="relative rounded-lg border border-zinc-700 bg-zinc-800/50 p-6 backdrop-blur-sm">
-      <h3 className="mb-4 text-xl font-semibold text-cyan-400">
-        Design Your Battle Robot
-      </h3>
+    <div
+      className="relative h-[600px] w-full bg-cover bg-bottom bg-no-repeat"
+      style={{
+        backgroundImage: "url(/robot-creator.png)",
+        width: "100vw",
+        marginLeft: "calc(-50vw + 50%)",
+        marginRight: "calc(-50vw + 50%)",
+      }}
+    >
+      <div className="container mx-auto p-4">
+        <div className="relative rounded-lg border border-zinc-700 bg-zinc-800/70 p-6 backdrop-blur-sm">
+          <h3 className="mb-4 text-xl font-semibold text-cyan-400">
+            Design Your Battle Robot
+          </h3>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="prompt" className="text-sm text-zinc-300">
-            Describe your robot
-          </label>
-          <Textarea
-            id="prompt"
-            value={prompt}
-            onChange={handlePromptChange}
-            placeholder="Example: A heavily armored robot with plasma cannons and advanced targeting systems..."
-            className="h-32 border-zinc-700 bg-zinc-900/50 focus:border-cyan-500"
-            disabled={isLoading}
-          />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="prompt" className="text-sm text-zinc-300">
+                Describe your robot
+              </label>
+              <Textarea
+                id="prompt"
+                value={prompt}
+                onChange={handlePromptChange}
+                placeholder="Example: A heavily armored robot with plasma cannons and advanced targeting systems..."
+                className="h-32 border-zinc-700 bg-zinc-900/50 focus:border-cyan-500"
+                disabled={isLoading}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading || !prompt.trim()}
+              className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-zinc-700"
+            >
+              {isLoading ? "Creating..." : "Create Robot"}
+            </Button>
+          </form>
+
+          {isLoading && <IsometricLoader />}
         </div>
-
-        <Button
-          type="submit"
-          disabled={isLoading || !prompt.trim()}
-          className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-zinc-700"
-        >
-          {isLoading ? "Creating..." : "Create Robot"}
-        </Button>
-      </form>
-
-      {isLoading && <CyberpunkLoader />}
+      </div>
     </div>
   );
-}
+};

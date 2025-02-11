@@ -5,6 +5,8 @@ import { ConnectWallet } from "@/components/ConnectWallet";
 import { useAuth } from "./auth/useAuth";
 import { Header } from "@/components/Header";
 import { useRouter } from "next/navigation";
+import { IsometricLoader } from "./_lib/robotLib/components/IsometricLoader";
+
 export default function LandingPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -15,8 +17,8 @@ export default function LandingPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="text-xl text-cyan-400">Loading...</div>
+      <div className="flex h-screen items-center justify-center">
+        <IsometricLoader />
       </div>
     );
   }

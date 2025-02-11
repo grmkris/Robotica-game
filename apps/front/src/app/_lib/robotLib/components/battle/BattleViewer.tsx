@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { BattleId, RobotId } from "robot-sdk";
+import { IsometricLoader } from "../IsometricLoader";
 
 interface BattleRound {
   id: `rnd${string}`;
@@ -23,8 +24,8 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
 
   if (isLoading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <p className="text-zinc-400">Loading battle...</p>
+      <div className="flex h-screen items-center justify-center">
+        <IsometricLoader />
       </div>
     );
   }

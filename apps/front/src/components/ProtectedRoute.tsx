@@ -3,6 +3,7 @@
 import { useAuth } from "@/app/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { IsometricLoader } from "@/app/_lib/robotLib/components/IsometricLoader";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -15,7 +16,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, isLoading, router]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <IsometricLoader />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
