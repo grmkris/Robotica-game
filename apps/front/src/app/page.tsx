@@ -25,19 +25,16 @@ export default function LandingPage() {
     <div className="flex min-h-screen flex-col">
       <Header onEnterArena={handleEnterArena} />
       <div className="flex flex-1 flex-col items-center justify-center">
-        <h1 className="mb-8 text-4xl font-bold tracking-wider text-cyan-400 md:text-6xl">
-          Robot Battle Arena
+        <h1 className="cyberpunk-title mb-8 text-5xl font-bold md:text-7xl">
+          ROBOTICA
         </h1>
-        <p className="mb-12 max-w-2xl text-xl leading-relaxed text-cyan-100 md:text-2xl">
+        <p className="cyberpunk-text mb-12 max-w-2xl text-center text-xl leading-relaxed md:text-2xl">
           Connect your wallet to enter the arena and create your battle robot
         </p>
         {!isAuthenticated ? (
           <ConnectWallet />
         ) : (
-          <Button
-            onClick={handleEnterArena}
-            className="transform rounded-lg bg-cyan-500 px-8 py-3 text-lg font-bold text-black shadow-lg shadow-cyan-500/50 transition-all duration-200 hover:scale-105 hover:bg-cyan-600"
-          >
+          <Button onClick={handleEnterArena} className="cyberpunk-button">
             Enter Arena
           </Button>
         )}
