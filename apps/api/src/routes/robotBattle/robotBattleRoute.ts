@@ -475,13 +475,21 @@ export const joinBattleRoute = new OpenAPIHono<{
     const db = c.get("db");
     const logger = c.get("logger");
 
-    // Add join battle logic here...
     const battle = await db.query.BattleTable.findFirst({
       where: eq(BattleTable.id, battleId),
+      with: {
+        battleRobots: true,
+      },
     });
 
     if (!battle) {
       throw new HTTPException(404, { message: "Battle not found" });
+    }
+
+    if (battle.status !== "WAITING") {
+      throw new HTTPException(400, {
+        message: "Battle is not in WAITING status",
+      });
     }
 
     // Insert battle robot
@@ -491,7 +499,13 @@ export const joinBattleRoute = new OpenAPIHono<{
       robotId: robotId,
     });
 
-    // start battle simulation in background
+    // Update battle status to IN_PROGRESS after second robot joins
+    await db
+      .update(BattleTable)
+      .set({ status: "IN_PROGRESS" })
+      .where(eq(BattleTable.id, battleId));
+
+    // Start battle simulation in background
     void resolveBattle({ battleId, db, logger });
 
     return c.json({ success: true });
@@ -638,11 +652,15 @@ export const createBattleRoute = new OpenAPIHono<{
         throw new HTTPException(404, { message: "Robot not found" });
       }
 
-      // Create battle
+      // Create battle with WAITING status instead of IN_PROGRESS
       const battleId = generateId("battle");
       const [battle] = await db
         .insert(BattleTable)
-        .values({ id: battleId, status: "IN_PROGRESS", createdBy: user.id })
+        .values({
+          id: battleId,
+          status: "WAITING", // Changed from IN_PROGRESS to WAITING
+          createdBy: user.id,
+        })
         .returning();
 
       // Insert battle robot
@@ -652,7 +670,7 @@ export const createBattleRoute = new OpenAPIHono<{
         robotId: robot1Id,
       });
 
-      return c.json({ battleId: battle.id }); // Replace with actual battle creation
+      return c.json({ battleId: battle.id });
     } catch (error) {
       logger.error({
         msg: "Failed to create battle",

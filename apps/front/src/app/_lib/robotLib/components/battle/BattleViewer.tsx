@@ -9,6 +9,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { BattleId, RobotId } from "robot-sdk";
 import { IsometricLoader } from "../IsometricLoader";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 interface BattleRound {
   id: `rnd${string}`;
@@ -38,6 +39,9 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
     );
   }
 
+  const isWaiting = battle.status === "WAITING";
+  const isGeneratingRounds = battle.status === "IN_PROGRESS";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -55,6 +59,28 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
 
       <ScrollArea className="h-[600px] rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
         <div className="space-y-4">
+          {isWaiting && (
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <DotLottieReact
+                src="/animation-robot-waiting.lottie"
+                loop
+                autoplay
+                className="h-32 w-32"
+              />
+              <p className="text-zinc-400">Waiting for battle to start...</p>
+            </div>
+          )}
+          {isGeneratingRounds && (
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <DotLottieReact
+                src="/animation-robot-loader.lottie"
+                loop
+                autoplay
+                className="h-32 w-32"
+              />
+              <p className="text-zinc-400">Generating next round...</p>
+            </div>
+          )}
           {battle.rounds?.map((round) => (
             <Card key={round.id} className="bg-zinc-900/50">
               <CardHeader>
@@ -85,9 +111,11 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
               </CardContent>
             </Card>
           ))}
-          {(!battle.rounds || battle.rounds.length === 0) && (
-            <p className="text-center text-zinc-400">No rounds yet</p>
-          )}
+          {(!battle.rounds || battle.rounds.length === 0) &&
+            !isWaiting &&
+            !isGeneratingRounds && (
+              <p className="text-zinc-400">No rounds yet</p>
+            )}
         </div>
       </ScrollArea>
     </div>

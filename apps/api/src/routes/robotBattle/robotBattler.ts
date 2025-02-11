@@ -69,7 +69,18 @@ export const _resolveBattle = async (props: {
   const battle = await db.query.BattleTable.findFirst({
     where: eq(BattleTable.id, battleId),
   });
+
   if (!battle) throw new Error(`Battle ${battleId} not found`);
+
+  // Only proceed if battle is IN_PROGRESS
+  if (battle.status !== "IN_PROGRESS") {
+    logger.info({
+      msg: "Battle not in progress, skipping resolution",
+      battleId,
+      status: battle.status,
+    });
+    return;
+  }
 
   const battleRobots = await db.query.BattleRobotsTable.findMany({
     where: eq(BattleRobotsTable.battleId, battleId),
