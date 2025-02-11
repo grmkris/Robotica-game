@@ -42,7 +42,7 @@ export function Header() {
 
         <nav className="flex items-center gap-4">
           <Link
-            href="/robot-battle"
+            href="/"
             className="text-foreground transition-colors hover:text-primary"
           >
             Robot Battle

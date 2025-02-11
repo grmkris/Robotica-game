@@ -226,87 +226,7 @@ export declare const createRobotApi: (props: {
         };
     };
 }, "/">, "/">, "/auth"> | import("hono/types").MergeSchemaPath<import("hono/types").MergeSchemaPath<{
-    "{battleId}/events": {
-        $get: {
-            input: {
-                param: {
-                    battleId: `bat${string}`;
-                };
-            };
-            output: Response;
-            outputFormat: "json";
-            status: import("hono/utils/http-status").StatusCode;
-        };
-    };
-}, "/battles/{battleId}/events"> & import("hono/types").MergeSchemaPath<{
-    "{battleId}/start": {
-        $post: {
-            input: {
-                param: {
-                    battleId: `bat${string}`;
-                };
-            } & {
-                json: {
-                    robot1Id: `rob${string}`;
-                    robot2Id: `rob${string}`;
-                };
-            };
-            output: {
-                battleId: `bat${string}`;
-            };
-            outputFormat: "json";
-            status: 200;
-        };
-    };
-}, "/battles/{battleId}/start"> & import("hono/types").MergeSchemaPath<{
-    "{battleId}/join": {
-        $post: {
-            input: {
-                param: {
-                    battleId: `bat${string}`;
-                };
-            } & {
-                json: {
-                    robotId: `rob${string}`;
-                };
-            };
-            output: {
-                success: boolean;
-            };
-            outputFormat: "json";
-            status: 200;
-        };
-    };
-}, "/battles/{battleId}/join"> & import("hono/types").MergeSchemaPath<{
-    "{battleId}": {
-        $get: {
-            input: {
-                param: {
-                    battleId: `bat${string}`;
-                };
-            };
-            output: {
-                status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "WAITING" | "FAILED";
-                id: `bat${string}`;
-                createdBy: `user${string}`;
-                createdAt: string;
-                winnerId: `rob${string}` | null;
-                startedAt: string;
-                completedAt: string | null;
-                rounds: {
-                    description: string;
-                    id: `rnd${string}`;
-                    winnerId: `rob${string}`;
-                    roundNumber: number;
-                    tacticalAnalysis: string;
-                }[];
-            };
-            outputFormat: "json";
-            status: 200;
-        };
-    };
-}, "/battles/{battleId}"> & import("hono/types").MergeSchemaPath<{
-    battles: {
+    "/": {
         $get: {
             input: {
                 query: {
@@ -330,6 +250,86 @@ export declare const createRobotApi: (props: {
                 page: number;
                 total: number;
                 totalPages: number;
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+}, "/battles"> & import("hono/types").MergeSchemaPath<{
+    ":battleId/events": {
+        $get: {
+            input: {
+                param: {
+                    battleId: `bat${string}`;
+                };
+            };
+            output: Response;
+            outputFormat: "json";
+            status: import("hono/utils/http-status").StatusCode;
+        };
+    };
+}, "/battles"> & import("hono/types").MergeSchemaPath<{
+    ":battleId/start": {
+        $post: {
+            input: {
+                param: {
+                    battleId: `bat${string}`;
+                };
+            } & {
+                json: {
+                    robot1Id: `rob${string}`;
+                    robot2Id: `rob${string}`;
+                };
+            };
+            output: {
+                battleId: `bat${string}`;
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+}, "/battles"> & import("hono/types").MergeSchemaPath<{
+    ":battleId/join": {
+        $post: {
+            input: {
+                param: {
+                    battleId: `bat${string}`;
+                };
+            } & {
+                json: {
+                    robotId: `rob${string}`;
+                };
+            };
+            output: {
+                success: boolean;
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+}, "/battles"> & import("hono/types").MergeSchemaPath<{
+    ":battleId": {
+        $get: {
+            input: {
+                param: {
+                    battleId: `bat${string}`;
+                };
+            };
+            output: {
+                status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "WAITING" | "FAILED";
+                id: `bat${string}`;
+                createdBy: `user${string}`;
+                createdAt: string;
+                winnerId: `rob${string}` | null;
+                startedAt: string;
+                completedAt: string | null;
+                rounds: {
+                    description: string;
+                    id: `rnd${string}`;
+                    winnerId: `rob${string}`;
+                    roundNumber: number;
+                    tacticalAnalysis: string;
+                }[];
             };
             outputFormat: "json";
             status: 200;

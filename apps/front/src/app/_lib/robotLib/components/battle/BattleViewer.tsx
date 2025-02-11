@@ -7,17 +7,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { BattleId, RobotId, RoundId } from "robot-sdk";
+import type { BattleId, RobotId } from "robot-sdk";
 
 interface BattleRound {
-  id: RoundId;
+  id: `rnd${string}`;
   battleId: BattleId;
   roundNumber: number;
   description: string;
   tacticalAnalysis: string;
-  robot1Action: string;
-  robot2Action: string;
-  roundWinnerId: RobotId;
+  winnerId: RobotId | null;
 }
 
 export function BattleViewer({ battleId }: { battleId: BattleId }) {
@@ -34,7 +32,7 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
   if (!battle) {
     return (
       <div className="flex h-[400px] items-center justify-center">
-        <p className="text-zinc-400">Loading battle...</p>
+        <p className="text-zinc-400">Battle not found</p>
       </div>
     );
   }
@@ -56,13 +54,15 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
 
       <ScrollArea className="h-[600px] rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
         <div className="space-y-4">
-          {battle.rounds.map((round) => (
+          {battle.rounds?.map((round) => (
             <Card key={round.id} className="bg-zinc-900/50">
               <CardHeader>
                 <CardTitle>Round {round.roundNumber}</CardTitle>
-                <CardDescription>
-                  Winner: Robot #{round.winnerId.split("_")[1]}
-                </CardDescription>
+                {round.winnerId && (
+                  <CardDescription>
+                    Winner: Robot #{round.winnerId.split("_")[1]}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -81,23 +81,12 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
                     </p>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-semibold text-cyan-400">Robot 1</h4>
-                    <p className="text-sm text-zinc-300">
-                      {round.description}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-cyan-400">Robot 2</h4>
-                    <p className="text-sm text-zinc-300">
-                      {round.tacticalAnalysis}
-                    </p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           ))}
+          {(!battle.rounds || battle.rounds.length === 0) && (
+            <p className="text-center text-zinc-400">No rounds yet</p>
+          )}
         </div>
       </ScrollArea>
     </div>

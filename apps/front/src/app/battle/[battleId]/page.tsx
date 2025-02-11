@@ -4,10 +4,13 @@ import { BattleViewer } from "@/app/_lib/robotLib/components/battle/BattleViewer
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import type { BattleId } from "robot-sdk";
+
+// The type from the API shows battleId is in format `bat${string}`
+type BattleId = `bat${string}`;
 
 export default function BattlePage() {
   const params = useParams();
+  // Cast to the correct type based on API definition
   const battleId = params.battleId as BattleId;
 
   return (
@@ -21,7 +24,7 @@ export default function BattlePage() {
             </p>
           </div>
           <div className="flex gap-4">
-            <Link href="/robot-battle">
+            <Link href="/">
               <Button variant="outline">Back to Arena</Button>
             </Link>
           </div>

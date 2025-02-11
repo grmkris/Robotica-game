@@ -122,7 +122,7 @@ export const createRobotRoute = new OpenAPIHono<{
       }
       throw new HTTPException(500, { message: "Failed to create robot" });
     }
-  },
+  }
 );
 
 // Helper function to generate robot data
@@ -164,7 +164,7 @@ async function generateRobotData(prompt: string, logger: Logger) {
 // Helper function to generate robot image
 async function generateRobotImage(
   robotData: { name: string; description: string },
-  logger: Logger,
+  logger: Logger
 ): Promise<string> {
   try {
     const prompt = `Detailed technical illustration of a robot named ${robotData.name}. ${robotData.description}. Video game style, detailed mechanical parts, professional lighting, high quality render, 8k resolution, unreal engine style`;
@@ -190,10 +190,10 @@ async function generateRobotImage(
       error:
         error instanceof Error
           ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          }
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
           : error,
       robotName: robotData.name,
       robotDescription: robotData.description,
@@ -234,11 +234,11 @@ export const getBattleByIdRoute = new OpenAPIHono<{
               rounds: z.array(
                 z.object({
                   id: RoundId,
-                  winnerId: RobotId,
+                  winnerId: RobotId.nullable(),
                   tacticalAnalysis: z.string(),
                   roundNumber: z.number(),
                   description: z.string(),
-                }),
+                })
               ),
             }),
           },
@@ -253,7 +253,7 @@ export const getBattleByIdRoute = new OpenAPIHono<{
     const battle = await db.query.BattleTable.findFirst({
       where: eq(BattleTable.id, battleId),
       with: {
-        rounds: true
+        rounds: true,
       },
     });
 
@@ -261,9 +261,8 @@ export const getBattleByIdRoute = new OpenAPIHono<{
       throw new HTTPException(404, { message: "Battle not found" });
     }
 
-
     return c.json(battle);
-  },
+  }
 );
 
 export const getUserRobotsRoute = new OpenAPIHono<{
@@ -289,7 +288,7 @@ export const getUserRobotsRoute = new OpenAPIHono<{
                   prompt: z.string(),
                   createdAt: z.string(),
                   createdBy: UserId,
-                }),
+                })
               ),
               selectedRobotId: RobotId.nullable(),
             }),
@@ -315,7 +314,7 @@ export const getUserRobotsRoute = new OpenAPIHono<{
       robots,
       selectedRobotId: stats?.selectedRobotId ?? null,
     });
-  },
+  }
 );
 
 export const battleEventsRoute = new OpenAPIHono<{
@@ -347,7 +346,7 @@ export const battleEventsRoute = new OpenAPIHono<{
                     tacticalAnalysis: z.string(),
                     roundNumber: z.number(),
                     description: z.string(),
-                  }),
+                  })
                 ),
               }),
             }),
@@ -430,9 +429,9 @@ export const battleEventsRoute = new OpenAPIHono<{
           "Cache-Control": "no-cache",
           Connection: "keep-alive",
         },
-      },
+      }
     );
-  },
+  }
 );
 
 export const joinBattleRoute = new OpenAPIHono<{
@@ -496,7 +495,7 @@ export const joinBattleRoute = new OpenAPIHono<{
     void resolveBattle({ battleId, db, logger });
 
     return c.json({ success: true });
-  },
+  }
 );
 
 export const startBattleRoute = new OpenAPIHono<{
@@ -584,7 +583,7 @@ export const startBattleRoute = new OpenAPIHono<{
       }
       throw new HTTPException(500, { message: "Failed to start battle" });
     }
-  },
+  }
 );
 
 export const createBattleRoute = new OpenAPIHono<{
@@ -631,7 +630,7 @@ export const createBattleRoute = new OpenAPIHono<{
       const robot1 = await db.query.RobotTable.findFirst({
         where: and(
           eq(RobotTable.id, robot1Id),
-          eq(RobotTable.createdBy, user.id),
+          eq(RobotTable.createdBy, user.id)
         ),
       });
 
@@ -664,7 +663,7 @@ export const createBattleRoute = new OpenAPIHono<{
       }
       throw new HTTPException(500, { message: "Failed to create battle" });
     }
-  },
+  }
 );
 
 const listBattlesRoute = new OpenAPIHono<{
@@ -672,7 +671,7 @@ const listBattlesRoute = new OpenAPIHono<{
 }>().openapi(
   createRoute({
     method: "get",
-    path: "battles",
+    path: "/",
     tags: ["RobotBattle"],
     summary: "List all battles with pagination",
     request: {
@@ -699,9 +698,9 @@ const listBattlesRoute = new OpenAPIHono<{
                       id: RobotId,
                       name: z.string(),
                       imageUrl: z.string().nullish(),
-                    }),
+                    })
                   ),
-                }),
+                })
               ),
               total: z.number(),
               page: z.number(),
@@ -739,7 +738,6 @@ const listBattlesRoute = new OpenAPIHono<{
       },
     });
 
-
     // Transform the data to match the response schema
     const formattedBattles = battles.map((battle) => ({
       id: battle.id,
@@ -760,19 +758,19 @@ const listBattlesRoute = new OpenAPIHono<{
       page: pageNum,
       totalPages: Math.ceil(Number(count) / limitNum),
     });
-  },
+  }
 );
-
 
 // Refactor routes with better RESTful patterns
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   // Robots resource
-  .route("/robots", createRobotRoute)        // POST /robots
-  .route("/robots", getUserRobotsRoute)      // GET /robots
+  .route("/robots", createRobotRoute) // POST /robots
+  .route("/robots", getUserRobotsRoute) // GET /robots
 
-  // Battles resource 
-  .route("/battles", createBattleRoute)      // POST /battles
-  .route("/battles", getBattleByIdRoute)  // GET /battles/:battleId
-  .route("/battles", joinBattleRoute)  // POST /battles/:battleId/join
-  .route("/battles", startBattleRoute)  // POST /battles/:battleId/start
-  .route("/battles", battleEventsRoute); // GET /battles/:battleId/events
+  // Battles resource
+  .route("/battles", createBattleRoute) // POST /battles
+  .route("/battles", getBattleByIdRoute) // GET /battles/:battleId
+  .route("/battles", joinBattleRoute) // POST /battles/:battleId/join
+  .route("/battles", startBattleRoute) // POST /battles/:battleId/start
+  .route("/battles", battleEventsRoute) // GET /battles/:battleId/events
+  .route("/battles", listBattlesRoute); // GET /battles

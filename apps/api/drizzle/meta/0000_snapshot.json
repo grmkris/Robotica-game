@@ -1,5 +1,5 @@
 {
-  "id": "1dc930b8-836e-45c8-9e3e-5ddc04a2b657",
+  "id": "0f3da5e7-9cea-4743-aad4-c96a51ed3536",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -541,19 +541,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "type": {
-          "name": "type",
-          "type": "wallet_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "chain_id": {
-          "name": "chain_id",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -570,17 +557,11 @@
         }
       },
       "indexes": {
-        "wallet_address_chain_idx": {
-          "name": "wallet_address_chain_idx",
+        "wallet_address_idx": {
+          "name": "wallet_address_idx",
           "columns": [
             {
               "expression": "address",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "chain_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -712,9 +693,15 @@
           "primaryKey": false,
           "notNull": true
         },
+        "winner_id": {
+          "name": "winner_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -728,6 +715,19 @@
           "tableTo": "battles",
           "columnsFrom": [
             "battle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battle_rounds_winner_id_robots_id_fk": {
+          "name": "battle_rounds_winner_id_robots_id_fk",
+          "tableFrom": "battle_rounds",
+          "tableTo": "robots",
+          "columnsFrom": [
+            "winner_id"
           ],
           "columnsTo": [
             "id"
@@ -784,6 +784,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -794,6 +800,19 @@
           "tableTo": "robots",
           "columnsFrom": [
             "winner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battles_created_by_users_id_fk": {
+          "name": "battles_created_by_users_id_fk",
+          "tableFrom": "battles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
           ],
           "columnsTo": [
             "id"
@@ -927,6 +946,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {
@@ -966,6 +991,19 @@
           "tableTo": "robots",
           "columnsFrom": [
             "selected_robot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_battle_stats_created_by_users_id_fk": {
+          "name": "user_battle_stats_created_by_users_id_fk",
+          "tableFrom": "user_battle_stats",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
           ],
           "columnsTo": [
             "id"
@@ -1016,13 +1054,6 @@
         "ADMIN"
       ]
     },
-    "public.wallet_type": {
-      "name": "wallet_type",
-      "schema": "public",
-      "values": [
-        "ETHEREUM"
-      ]
-    },
     "public.battle_room_status": {
       "name": "battle_room_status",
       "schema": "public",
@@ -1041,7 +1072,8 @@
         "WAITING",
         "IN_PROGRESS",
         "COMPLETED",
-        "CANCELLED"
+        "CANCELLED",
+        "FAILED"
       ]
     },
     "public.robot_class": {

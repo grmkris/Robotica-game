@@ -2,31 +2,17 @@
 
 import { BattlesList } from "@/app/_lib/robotLib/components/battle/BattleList";
 import { useGetUserRobots } from "@/app/_lib/robotLib/robotHooks";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import type { RobotId } from "robot-sdk";
 import { CreateBattleRoom } from "./battle/CreateBattleRoom";
 
-type Robot = {
-  id: RobotId;
-  name: string;
-  description: string;
-  createdAt: Date;
-  imageUrl?: string;
-};
-
 function UserRobots() {
-  const queryClient = useQueryClient();
-
   const { data, isLoading } = useGetUserRobots();
 
   if (isLoading) {
@@ -42,10 +28,7 @@ function UserRobots() {
       {data?.robots?.map((robot) => (
         <Card
           key={robot.id}
-          className={`bg-zinc-900/50 backdrop-blur-sm transition-all hover:bg-zinc-900/70 ${robot.id === data.selectedRobotId
-            ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-            : ""
-            }`}
+          className="bg-zinc-900/50 backdrop-blur-sm transition-all hover:bg-zinc-900/70"
         >
           {robot.imageUrl && (
             <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
@@ -69,19 +52,6 @@ function UserRobots() {
               Created: {new Date(robot.createdAt).toLocaleDateString()}
             </p>
           </CardContent>
-          <CardFooter>
-            <Button
-              disabled={robot.id === data.selectedRobotId}
-              variant={
-                robot.id === data.selectedRobotId ? "secondary" : "default"
-              }
-              className="w-full"
-            >
-              {robot.id === data.selectedRobotId
-                ? "Active Fighter"
-                : "Select as Fighter"}
-            </Button>
-          </CardFooter>
         </Card>
       ))}
     </div>
@@ -97,44 +67,42 @@ export function ClientDashboard() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h1 className="text-4xl font-bold text-cyan-400">
-              Your Battle Robots
+              Robot Battle Arena
             </h1>
             <p className="text-zinc-400">
-              Select your active fighter for the arena
+              Create battles and choose your fighter for each match
             </p>
-          </div>
-          <div className="flex gap-4">
-            <Link href="/">
-              <Button variant="outline">Back to Home</Button>
-            </Link>
           </div>
         </div>
 
         <section>
+          <h2 className="mb-4 text-2xl font-bold text-cyan-400">Your Robots</h2>
           <UserRobots />
         </section>
 
-        {/* Add Battle Room Section */}
+        {/* Battle Arena Section */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h2 className="text-3xl font-bold text-cyan-400">Battle Arena</h2>
+              <h2 className="text-3xl font-bold text-cyan-400">
+                Active Battles
+              </h2>
               <p className="text-zinc-400">
-                Create or join battle rooms to fight other robots
+                Join existing battles or create your own
               </p>
             </div>
-            <CreateBattleRoom
-              selectedRobotId={userRobots.data?.selectedRobotId ?? null}
-            />
+            {userRobots.data?.robots && userRobots.data.robots.length > 0 && (
+              <CreateBattleRoom />
+            )}
           </div>
 
           <div className="mt-6">
-            {userRobots.data?.selectedRobotId ? (
-              <BattlesList selectedRobotId={userRobots.data.selectedRobotId} />
+            {userRobots.data?.robots?.length ? (
+              <BattlesList />
             ) : (
               <div className="rounded-lg border border-dashed border-zinc-700 p-8 text-center">
                 <p className="text-zinc-400">
-                  Select a robot first to see available battle rooms
+                  Create a robot first to participate in battles
                 </p>
               </div>
             )}
