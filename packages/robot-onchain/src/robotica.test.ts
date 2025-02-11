@@ -63,47 +63,65 @@ describe('Robotica Onchain', () => {
   });
 
   describe('Game Entry', () => {
+
+    it('should get signer address', async () => {
+      const signerAddress = await signer.getSignerAddress();
+      expect(signerAddress).toBeTypeOf('string');
+      expect(signerAddress).toStartWith('0x');
+      console.log(signerAddress);
+    });
+
+    it('should get entry fee', async () => {
+      const entryFee = await player1.getEntryFee();
+      expect(entryFee).toBeTypeOf('bigint');
+      expect(entryFee).toBeGreaterThan(0n);
+      console.log(entryFee);
+    });
+
     it('should generate valid enter game signature', async () => {
-      const signature = await player1.generateEnterGameSignature();
+      // Generate signature using signer (server authority)
+      const signature = await signer.generateEnterGameSignature({ user: addresses.player1 });
       expect(signature).toBeTypeOf('string');
       expect(signature).toStartWith('0x');
     });
 
     it('should allow player to enter game', async () => {
-      const signature = await player1.generateEnterGameSignature();
+      // Generate signature using signer (server authority)
+      const signature = await signer.generateEnterGameSignature({ user: addresses.player1 });
+      // Player uses the signature to enter
       const tx = await player1.enterGame({ signature });
       expect(tx).toBeTypeOf('string');
       expect(tx).toStartWith('0x');
-    });
+    }, 20000000);
   });
 
   describe('Prize Claiming', () => {
     it('should generate valid claim prize signature', async () => {
-      const amount = parseEther('0.1');
-      const signature = await player1.generateClaimPrizeSignature(amount);
+      const amount = parseEther('0.001');
+      const signature = await signer.generateClaimPrizeSignature({ amount, user: addresses.player1 });
       expect(signature).toBeTypeOf('string');
       expect(signature).toStartWith('0x');
     });
 
     it('should get correct nonce for player', async () => {
-      const nonce = await player1.getNonce();
+      const nonce = await signer.getNonce();
       expect(nonce).toBeTypeOf('bigint');
       expect(nonce).toBeGreaterThanOrEqual(0n);
     });
 
     it('should allow player to claim prize', async () => {
-      const amount = parseEther('0.1');
-      const signature = await player1.generateClaimPrizeSignature(amount);
+      const amount = parseEther('0.001');
+      const signature = await signer.generateClaimPrizeSignature({ amount, user: addresses.player1 });
       const tx = await player1.claimPrize({ amount, signature });
       expect(tx).toBeTypeOf('string');
       expect(tx).toStartWith('0x');
-    });
+    }, 20000000);
   });
 
   describe('Error Cases', () => {
     it('should fail when using another player\'s signature', async () => {
       // Generate signature for player1
-      const signature = await player1.generateEnterGameSignature();
+      const signature = await player1.generateEnterGameSignature({ user: addresses.player1 });
 
       // Try to use it with player2
       await expect(
@@ -113,7 +131,7 @@ describe('Robotica Onchain', () => {
 
     it('should fail when claiming with invalid amount', async () => {
       const amount = parseEther('0.1');
-      const signature = await player1.generateClaimPrizeSignature(amount);
+      const signature = await player1.generateClaimPrizeSignature({ amount, user: addresses.player1 });
 
       // Try to claim different amount with same signature
       const wrongAmount = parseEther('0.2');
@@ -123,7 +141,7 @@ describe('Robotica Onchain', () => {
     });
 
     it('should fail when reusing signatures', async () => {
-      const signature = await player1.generateEnterGameSignature();
+      const signature = await player1.generateEnterGameSignature({ user: addresses.player1 });
 
       // First entry should succeed
       await player1.enterGame({ signature });
