@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseEther } from "viem";
+import { createWalletClient, http, parseEther } from "viem";
 import { mnemonicToAccount } from "viem/accounts";
 import { avalanche } from "viem/chains";
 import { z } from "zod";
@@ -14,35 +14,44 @@ const testEnvSchema = z.object({
 
 const testEnv = testEnvSchema.parse(process.env);
 
+// Create wallet clients for different roles
+const signerAccount = mnemonicToAccount(testEnv.SIGNER_MNEMONIC);
+const player1Account = mnemonicToAccount(testEnv.PLAYER1_MNEMONIC);
+const player2Account = mnemonicToAccount(testEnv.PLAYER2_MNEMONIC);
+
+const createTestWalletClient = (account: typeof signerAccount) => {
+  return createWalletClient({
+    account,
+    chain: avalanche,
+    transport: http()
+  });
+};
+
 // Create instances for different roles
 const signer = createRoboticaOnchain({
-  mnemonic: testEnv.SIGNER_MNEMONIC,
+  walletClient: createTestWalletClient(signerAccount),
   contractAddress: testEnv.CONTRACT_ADDRESS,
   chain: avalanche,
 });
 
 const player1 = createRoboticaOnchain({
-  mnemonic: testEnv.PLAYER1_MNEMONIC,
+  walletClient: createTestWalletClient(player1Account),
   contractAddress: testEnv.CONTRACT_ADDRESS,
   chain: avalanche,
 });
 
 const player2 = createRoboticaOnchain({
-  mnemonic: testEnv.PLAYER2_MNEMONIC,
+  walletClient: createTestWalletClient(player2Account),
   contractAddress: testEnv.CONTRACT_ADDRESS,
   chain: avalanche,
 });
 
 // Helper function to get addresses
 const getAddresses = () => {
-  const signerAddress = mnemonicToAccount(testEnv.SIGNER_MNEMONIC).address;
-  const player1Address = mnemonicToAccount(testEnv.PLAYER1_MNEMONIC).address;
-  const player2Address = mnemonicToAccount(testEnv.PLAYER2_MNEMONIC).address;
-
   return {
-    signer: signerAddress,
-    player1: player1Address,
-    player2: player2Address,
+    signer: signerAccount.address,
+    player1: player1Account.address,
+    player2: player2Account.address,
   };
 };
 
@@ -79,17 +88,19 @@ describe('Robotica Onchain', () => {
     });
 
     it('should generate valid enter game signature', async () => {
+      const gameId = 1n;
       // Generate signature using signer (server authority)
-      const signature = await signer.generateEnterGameSignature({ user: addresses.player1 });
+      const signature = await signer.generateEnterGameSignature({ user: addresses.player1, gameId });
       expect(signature).toBeTypeOf('string');
       expect(signature).toStartWith('0x');
     });
 
     it('should allow player to enter game', async () => {
+      const gameId = 1n;
       // Generate signature using signer (server authority)
-      const signature = await signer.generateEnterGameSignature({ user: addresses.player1 });
+      const signature = await signer.generateEnterGameSignature({ user: addresses.player1, gameId });
       // Player uses the signature to enter
-      const tx = await player1.enterGame({ signature });
+      const tx = await player1.enterGame({ gameId, signature });
       expect(tx).toBeTypeOf('string');
       expect(tx).toStartWith('0x');
     }, 20000000);
@@ -98,7 +109,8 @@ describe('Robotica Onchain', () => {
   describe('Prize Claiming', () => {
     it('should generate valid claim prize signature', async () => {
       const amount = parseEther('0.001');
-      const signature = await signer.generateClaimPrizeSignature({ amount, user: addresses.player1 });
+      const gameId = 1n;
+      const signature = await signer.generateClaimPrizeSignature({ amount, user: addresses.player1, gameId });
       expect(signature).toBeTypeOf('string');
       expect(signature).toStartWith('0x');
     });
@@ -111,8 +123,9 @@ describe('Robotica Onchain', () => {
 
     it('should allow player to claim prize', async () => {
       const amount = parseEther('0.001');
-      const signature = await signer.generateClaimPrizeSignature({ amount, user: addresses.player1 });
-      const tx = await player1.claimPrize({ amount, signature });
+      const gameId = 1n;
+      const signature = await signer.generateClaimPrizeSignature({ amount, user: addresses.player1, gameId });
+      const tx = await player1.claimPrize({ amount, gameId, signature });
       expect(tx).toBeTypeOf('string');
       expect(tx).toStartWith('0x');
     }, 20000000);
@@ -120,35 +133,38 @@ describe('Robotica Onchain', () => {
 
   describe('Error Cases', () => {
     it('should fail when using another player\'s signature', async () => {
+      const gameId = 1n;
       // Generate signature for player1
-      const signature = await player1.generateEnterGameSignature({ user: addresses.player1 });
+      const signature = await player1.generateEnterGameSignature({ user: addresses.player1, gameId });
 
       // Try to use it with player2
       await expect(
-        player2.enterGame({ signature })
+        player2.enterGame({ gameId: 1n, signature })
       ).rejects.toThrow();
     });
 
     it('should fail when claiming with invalid amount', async () => {
       const amount = parseEther('0.1');
-      const signature = await player1.generateClaimPrizeSignature({ amount, user: addresses.player1 });
+      const gameId = 1n;
+      const signature = await player1.generateClaimPrizeSignature({ amount, user: addresses.player1, gameId });
 
       // Try to claim different amount with same signature
       const wrongAmount = parseEther('0.2');
       await expect(
-        player1.claimPrize({ amount: wrongAmount, signature })
+        player1.claimPrize({ amount: wrongAmount, gameId: 1n, signature })
       ).rejects.toThrow();
     });
 
     it('should fail when reusing signatures', async () => {
-      const signature = await player1.generateEnterGameSignature({ user: addresses.player1 });
+      const gameId = 1n;
+      const signature = await player1.generateEnterGameSignature({ user: addresses.player1, gameId });
 
       // First entry should succeed
-      await player1.enterGame({ signature });
+      await player1.enterGame({ gameId: 1n, signature });
 
       // Second entry with same signature should fail
       await expect(
-        player1.enterGame({ signature })
+        player1.enterGame({ gameId: 1n, signature })
       ).rejects.toThrow();
     });
   });

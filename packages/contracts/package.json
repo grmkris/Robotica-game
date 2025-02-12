@@ -39,6 +39,6 @@
     "deploy:avalanche": "source .env && forge script script/DeployRobotica.s.sol:DeployRobotica --rpc-url $AVALANCHE_RPC_URL --sender $SIGNER_ADDRESS --mnemonics \"$SIGNER_MNEMONIC\" --broadcast --verify -vvvv",
     "deployer:address": "source .env && cast wallet address --mnemonic \"$SIGNER_MNEMONIC\"",
     "verify:sepolia": "forge verify-contract --chain-id 11155111 --watch --compiler-version $(forge --version | grep 'forge' | grep -o 'v[0-9]\\.[0-9]\\.[0-9].*commit\\.[a-f0-9]\\{8\\}') --etherscan-api-key $ETHERSCAN_API_KEY $CONTRACT_ADDRESS src/Robotica.sol:Robotica",
-    "verify:avalanche": "forge verify-contract --chain-id 43114 --watch --compiler-version 0.8.25  --etherscan-api-key verifyContract '0x1474ca5DeF343db3f095c8978457d2AD7b0980CE' src/RoboticaPayments.sol:RoboticaPayments"
+    "verify:avalanche": "forge verify-contract --chain-id 43114 --watch --compiler-version 0.8.25  --etherscan-api-key verifyContract '0xf6f1288521d772e881ecc2b8cc2c147a33f6a30c' src/RoboticaPayments.sol:RoboticaPayments"
   }
 }
