@@ -1,22 +1,10 @@
 import {
+  useGenerateGameSignature,
+  useGetUserRobots,
   useJoinBattle,
   useListBattles,
-  useGetUserRobots,
-  useGenerateGameSignature,
 } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import {
-  RobotId,
-  type BattleId,
-  type BattleStatus,
-  type UserId,
-} from "robot-sdk";
-import { useAccount, useWalletClient } from "wagmi";
-import { toast } from "sonner";
-import { enterGame } from "../../robotContract";
-import { BattleCard } from "./BattleCard";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import {
+  type BattleId,
+  type BattleStatus,
+  RobotId,
+  type UserId,
+} from "robot-sdk";
+import { toast } from "sonner";
+import { useAccount, useWalletClient } from "wagmi";
+import { enterGame } from "../../robotContract";
+import { BattleCard } from "./BattleCard";
 
 interface BattleRoom {
   id: BattleId;
@@ -93,11 +93,11 @@ export function BattlesList() {
       if (!walletClient.data) {
         throw new Error("Wallet client not found");
       }
-      await enterGame(
-        BigInt(battleData.gameId),
-        signatureData.signature,
-        walletClient.data,
-      );
+      await enterGame({
+        gameId: BigInt(battleData.gameId),
+        signature: signatureData.signature,
+        walletClient: walletClient.data,
+      });
 
       // 4. Navigate to battle page
       router.push(`/battle/${selectedBattleId}`);

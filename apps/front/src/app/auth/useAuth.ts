@@ -6,12 +6,7 @@ export const ChangePasswordSchema = z.object({
 });
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import {
-  changeUserPassword,
-  getCurrentUser,
-  updateUser
-} from "./authActions";
-
+import { changeUserPassword, getCurrentUser, updateUser } from "./authActions";
 
 export function useAuth() {
   const {

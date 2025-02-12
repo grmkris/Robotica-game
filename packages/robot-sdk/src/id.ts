@@ -13,7 +13,7 @@ const prefixes = {
 	userItem: "useritem",
 	transaction: "txn",
 	wallet: "wallet",
-	error: "error"
+	error: "error",
 } as const;
 
 type Prefix = (typeof prefixes)[keyof typeof prefixes];

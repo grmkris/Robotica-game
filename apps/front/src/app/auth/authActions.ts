@@ -1,6 +1,5 @@
 import { robotClient } from "@/app/_lib/robotLib/robotClient";
 
-
 type ChangePasswordSchema = {
   currentPassword: string;
   newPassword: string;
@@ -21,7 +20,9 @@ export async function connectWallet(walletAddress: string, signature: string) {
 }
 
 export async function disconnectWallet() {
-  const response = await robotClient.auth.logout.$get({ query: { redirect: undefined } });
+  const response = await robotClient.auth.logout.$get({
+    query: { redirect: undefined },
+  });
   if (!response.ok) throw new Error("Failed to disconnect wallet");
   return response.json();
 }

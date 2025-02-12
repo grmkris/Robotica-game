@@ -1,27 +1,27 @@
-import { useState } from "react";
-import { useAccount } from "wagmi";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useGenerateClaimSignature } from "../../robotHooks";
-import { claimPrize } from "../../robotContract";
+import { useState } from "react";
 import type { BattleId } from "robot-sdk";
+import { toast } from "sonner";
+import { useAccount, useWalletClient } from "wagmi";
+import { claimPrize } from "../../robotContract";
+import { useGenerateClaimSignature } from "../../robotHooks";
 
 interface ClaimPrizeButtonProps {
-  gameId: number;
+  gameId: bigint;
   battleId: BattleId;
-  prizeAmount: string;
+  prizeAmount: bigint;
   disabled?: boolean;
 }
 
 export function ClaimPrizeButton({
   gameId,
-  battleId,
   prizeAmount,
   disabled,
 }: ClaimPrizeButtonProps) {
   const { address } = useAccount();
   const [isProcessing, setIsProcessing] = useState(false);
   const generateSignature = useGenerateClaimSignature();
+  const walletClient = useWalletClient();
 
   const handleClaim = async () => {
     if (!address) return;
@@ -36,8 +36,17 @@ export function ClaimPrizeButton({
         amount: prizeAmount,
       });
 
+      if (!walletClient.data) {
+        throw new Error("Wallet client not found");
+      }
+
       // 2. Send transaction using user's wallet and wait for confirmation
-      await claimPrize(battleId, prizeAmount, signatureData.signature);
+      await claimPrize({
+        gameId: gameId,
+        amount: prizeAmount,
+        signature: signatureData.signature,
+        walletClient: walletClient.data,
+      });
 
       toast.success("Prize claimed successfully!");
     } catch (error) {

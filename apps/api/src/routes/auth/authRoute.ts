@@ -248,7 +248,7 @@ export const siweVerify = new OpenAPIHono<{
 						.insert(wallets)
 						.values({
 							userId: user.id,
-							address
+							address,
 						})
 						.returning();
 

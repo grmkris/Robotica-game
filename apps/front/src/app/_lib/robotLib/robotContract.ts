@@ -1,11 +1,5 @@
 import { createRoboticaOnchain } from "robot-onchain";
-import {
-  createPublicClient,
-  createWalletClient,
-  custom,
-  http,
-  type WalletClient,
-} from "viem";
+import { createPublicClient, http, type WalletClient } from "viem";
 import { avalanche } from "viem/chains";
 
 // Contract address from environment variable
@@ -17,16 +11,6 @@ const publicClient = createPublicClient({
   transport: http(),
 });
 
-// Get user's wallet client
-export const getWalletClient = async (): Promise<WalletClient> => {
-  if (!window.ethereum) throw new Error("No ethereum provider found");
-
-  return createWalletClient({
-    chain: avalanche,
-    transport: custom(window.ethereum as any),
-  });
-};
-
 // Ensure signature is hex string
 const ensureHexSignature = (signature: string): `0x${string}` => {
   if (!signature.startsWith("0x")) {
@@ -35,15 +19,13 @@ const ensureHexSignature = (signature: string): `0x${string}` => {
   return signature as `0x${string}`;
 };
 
-// Helper function to convert BattleId to numeric string
-const getBattleNumericId = (battleId: string) => battleId.replace("bat", "");
-
 // Contract interactions using user's wallet
-export const enterGame = async (
-  gameId: bigint,
-  signature: string,
-  walletClient: WalletClient,
-) => {
+export const enterGame = async (props: {
+  gameId: bigint;
+  signature: string;
+  walletClient: WalletClient;
+}) => {
+  const { gameId, signature, walletClient } = props;
   const contract = createRoboticaOnchain({
     walletClient,
     contractAddress: CONTRACT_ADDRESS,
@@ -60,22 +42,22 @@ export const enterGame = async (
   return receipt;
 };
 
-export const claimPrize = async (
-  gameId: string,
-  amount: string,
-  signature: string,
-) => {
-  const walletClient = await getWalletClient();
+export const claimPrize = async (props: {
+  gameId: bigint;
+  amount: bigint;
+  signature: string;
+  walletClient: WalletClient;
+}) => {
+  const { gameId, amount, signature, walletClient } = props;
   const contract = createRoboticaOnchain({
     walletClient,
     contractAddress: CONTRACT_ADDRESS,
     chain: avalanche,
   });
 
-  const numericGameId = getBattleNumericId(gameId);
   const hash = await contract.claimPrize({
-    gameId: BigInt(numericGameId),
-    amount: BigInt(amount),
+    gameId: gameId,
+    amount: amount,
     signature: ensureHexSignature(signature),
   });
 

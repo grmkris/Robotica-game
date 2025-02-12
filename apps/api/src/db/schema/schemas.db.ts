@@ -9,11 +9,7 @@ import {
 	wallets,
 } from "@/db/schema/users.db";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import {
-	ItemId,
-	UserId,
-	UserItemId,
-} from "robot-sdk";
+import { ItemId, UserId, UserItemId } from "robot-sdk";
 import { z } from "zod";
 
 export const SelectWalletSchema = createSelectSchema(wallets, {

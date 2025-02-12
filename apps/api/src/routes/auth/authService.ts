@@ -115,9 +115,9 @@ function getSmtpTransporter() {
 		new SMTPTransport({
 			auth: requiresAuth
 				? {
-					user: env.SMTP_USERNAME,
-					pass: env.SMTP_PASSWORD,
-				}
+						user: env.SMTP_USERNAME,
+						pass: env.SMTP_PASSWORD,
+					}
 				: undefined,
 			host: env.SMTP_HOST,
 			port: env.SMTP_PORT,

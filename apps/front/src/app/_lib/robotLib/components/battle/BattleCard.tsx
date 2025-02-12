@@ -44,7 +44,12 @@ export function BattleCard({
           <p>Created by: {createdBy}</p>
           <p>Robots: {robots.map((robot) => robot.name).join(", ")}</p>
           <p>Created: {formatDistanceToNow(new Date(createdAt))} ago</p>
-          <p>Completed: {completedAt ? formatDistanceToNow(new Date(completedAt)) : "Not completed"}</p>
+          <p>
+            Completed:{" "}
+            {completedAt
+              ? formatDistanceToNow(new Date(completedAt))
+              : "Not completed"}
+          </p>
         </div>
       </CardContent>
       <CardFooter>

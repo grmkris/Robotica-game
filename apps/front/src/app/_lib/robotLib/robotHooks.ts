@@ -3,13 +3,13 @@ import type { BattleId, RobotId } from "robot-sdk";
 import {
   createBattle,
   createRobot,
+  generateClaimSignature,
+  generateGameSignature,
   getBattleById,
   getBattleEvents,
   getUserRobots,
   joinBattle,
   listBattles,
-  generateGameSignature,
-  generateClaimSignature,
 } from "./robotActions";
 import { robotClient } from "./robotClient";
 
@@ -110,14 +110,14 @@ export const useGenerateGameSignature = () => {
 export const useGenerateClaimSignature = () => {
   return useMutation({
     mutationFn: (props: {
-      gameId: number;
+      gameId: bigint;
       userAddress: string;
-      amount: string;
+      amount: bigint;
     }) =>
       generateClaimSignature({
-        gameId: props.gameId,
+        gameId: Number(props.gameId),
         userAddress: props.userAddress,
-        amount: props.amount,
+        amount: props.amount.toString(),
         robotClient,
       }),
   });
