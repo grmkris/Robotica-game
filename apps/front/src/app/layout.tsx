@@ -17,8 +17,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 
 export const metadata: Metadata = {
-  title: "Cat Misha",
-  description: "Cat Misha is an agi cat who loves to share her life with you.",
+  title: "Robotica",
+  description:
+    "Create your own robot and battle with other robots in a fun and creative way",
   icons: {
     icon: [
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },

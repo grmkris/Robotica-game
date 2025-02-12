@@ -226,6 +226,39 @@ export declare const createRobotApi: (props: {
         };
     };
 }, "/">, "/">, "/auth"> | import("hono/types").MergeSchemaPath<import("hono/types").MergeSchemaPath<{
+    "/generate-claim-signature": {
+        $post: {
+            input: {
+                json: {
+                    amount: string;
+                    gameId: string;
+                    userAddress: string;
+                };
+            };
+            output: {
+                signature: string;
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+}, "/claim-signature"> & import("hono/types").MergeSchemaPath<{
+    "/generate-game-signature": {
+        $post: {
+            input: {
+                json: {
+                    gameId: string;
+                    userAddress: string;
+                };
+            };
+            output: {
+                signature: string;
+            };
+            outputFormat: "json";
+            status: 200;
+        };
+    };
+}, "/game-signature"> & import("hono/types").MergeSchemaPath<{
     "/": {
         $get: {
             input: {
@@ -326,7 +359,7 @@ export declare const createRobotApi: (props: {
                 rounds: {
                     description: string;
                     id: `rnd${string}`;
-                    winnerId: `rob${string}`;
+                    winnerId: `rob${string}` | null;
                     roundNumber: number;
                     tacticalAnalysis: string;
                 }[];

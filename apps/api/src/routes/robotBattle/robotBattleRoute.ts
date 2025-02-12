@@ -935,15 +935,17 @@ export const generateClaimSignatureRoute = new OpenAPIHono<{
 // Refactor routes with better RESTful patterns
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   // Robots resource
-  .route("/robots", createRobotRoute) // POST /robots
-  .route("/robots", getUserRobotsRoute) // GET /robots
+  .route("/robots", createRobotRoute)
+  .route("/robots", getUserRobotsRoute)
 
   // Battles resource
-  .route("/battles", createBattleRoute) // POST /battles
-  .route("/battles", getBattleByIdRoute) // GET /battles/:battleId
-  .route("/battles", joinBattleRoute) // POST /battles/:battleId/join
-  .route("/battles", startBattleRoute) // POST /battles/:battleId/start
-  .route("/battles", battleEventsRoute) // GET /battles/:battleId/events
-  .route("/battles", listBattlesRoute) // GET /battles
-  .route("/generate-game-signature", generateGameSignatureRoute)
-  .route("/generate-claim-signature", generateClaimSignatureRoute);
+  .route("/battles", createBattleRoute)
+  .route("/battles", getBattleByIdRoute)
+  .route("/battles", joinBattleRoute)
+  .route("/battles", startBattleRoute)
+  .route("/battles", battleEventsRoute)
+  .route("/battles", listBattlesRoute)
+
+  // Signature routes - simplified paths
+  .route("/game-signature", generateGameSignatureRoute)
+  .route("/claim-signature", generateClaimSignatureRoute);

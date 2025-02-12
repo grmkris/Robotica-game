@@ -96,3 +96,37 @@ export const listBattles = async (props: {
   });
   return response.json();
 };
+
+export const generateGameSignature = async (props: {
+  gameId: string;
+  userAddress: string;
+  robotClient: RobotClient;
+}) => {
+  const response = await props.robotClient["robot-battle"]["game-signature"][
+    "generate-game-signature"
+  ].$post({
+    json: {
+      gameId: props.gameId,
+      userAddress: props.userAddress,
+    },
+  });
+  return response.json();
+};
+
+export const generateClaimSignature = async (props: {
+  gameId: string;
+  userAddress: string;
+  amount: string;
+  robotClient: RobotClient;
+}) => {
+  const response = await props.robotClient["robot-battle"]["claim-signature"][
+    "generate-claim-signature"
+  ].$post({
+    json: {
+      gameId: props.gameId,
+      userAddress: props.userAddress,
+      amount: props.amount,
+    },
+  });
+  return response.json();
+};
