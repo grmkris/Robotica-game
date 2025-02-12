@@ -57,41 +57,16 @@ export const env = parseEnv(process.env, {
   EMAIL_FROM: z.string().default("hello@example.com"),
 
   STANDALONE: z.coerce.number().default(0),
-  VITE_DATABASE_URL: z.string().optional(),
-  VITE_BLOB_READ_WRITE_TOKEN: z.string().optional(),
-  VITE_OPENAI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string(),
 
-  REDIS_HOST: z.string().default("localhost"),
-  REDIS_PORT: z.coerce.number().default(6379),
-  REDIS_PASSWORD: z.string().optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("debug"),
-  GROQ_API_KEY: z.string(),
   OPENROUTER_API_KEY: z.string(),
   ENVIRONMENT: Environment,
   REOWN_PROJECT_ID: z.string().default("reown"),
   GOOGLE_GEMINI_API_KEY: z.string(),
   FAL_API_KEY: z.string(),
 
-  IG_USERNAME: z.string(),
-  IG_PASSWORD: z.string(),
-
-  FREQUENCY_CONFIG: z.coerce.number().default(60),
   LITERAL_AI_API_KEY: z.string(),
-
-  // Scheduler enablement flags
-  ENABLE_THOUGHT_SCHEDULER: z.coerce.boolean().default(false),
-  ENABLE_SOCIAL_MEDIA_SCHEDULER: z.coerce.boolean().default(false),
-
-  // Scheduler frequencies (in minutes)
-  THOUGHT_SCHEDULER_FREQUENCY: z.coerce.number().default(15), // default 15 minutes
-  SOCIAL_MEDIA_SCHEDULER_FREQUENCY: z.coerce.number().default(60), // default 60 minutes
-
-  TWITTER_USERNAME: z.string(),
-  TWITTER_PASSWORD: z.string(),
-
-  // Add OpenAI API key to the schema
-  OPENAI_API_KEY: z.string(),
 
   // Add blockchain-related environment variables with proper types
   SIGNER_MNEMONIC: mnemonicStringSchema,
