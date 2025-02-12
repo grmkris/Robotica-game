@@ -2,6 +2,7 @@ import {
   useJoinBattle,
   useListBattles,
   useGetUserRobots,
+  useGenerateGameSignature,
 } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,9 @@ import {
   type BattleStatus,
   type UserId,
 } from "robot-sdk";
+import { useAccount } from "wagmi";
+import { toast } from "sonner";
+import { enterGame } from "../../robotContract";
 import { BattleCard } from "./BattleCard";
 import {
   Dialog,
@@ -43,11 +47,14 @@ interface JoinRoomResponse {
 
 export function BattlesList() {
   const router = useRouter();
+  const { address } = useAccount();
   const { data: userRobots } = useGetUserRobots();
   const [selectedRobotId, setSelectedRobotId] = useState<RobotId | null>(null);
   const [selectedBattleId, setSelectedBattleId] = useState<BattleId | null>(
     null,
   );
+  const [isProcessing, setIsProcessing] = useState(false);
+  const generateSignature = useGenerateGameSignature();
 
   const {
     data: battles,
@@ -60,25 +67,46 @@ export function BattlesList() {
 
   const joinBattle = useJoinBattle();
 
-  const handleJoinBattle = () => {
-    if (!selectedRobotId || !selectedBattleId) return;
+  const handleJoinBattle = async () => {
+    if (!selectedRobotId || !selectedBattleId || !address) return;
 
-    joinBattle.mutate(
-      {
+    try {
+      setIsProcessing(true);
+
+      // 1. Join battle in our backend
+      await joinBattle.mutateAsync({
         battleId: selectedBattleId,
         robotId: selectedRobotId,
-      },
-      {
-        onSuccess: () => {
-          router.push(`/battle/${selectedBattleId}`);
-        },
-        onError: (error) => {
-          console.error("Join battle error:", error);
-          // Add error handling/toast here
-        },
-      },
-    );
+      });
+
+      // 2. Get signature from backend
+      const signatureData = await generateSignature.mutateAsync({
+        gameId: selectedBattleId,
+        userAddress: address,
+      });
+
+      // 3. Send transaction using user's wallet and wait for confirmation
+      await enterGame(selectedBattleId, signatureData.signature);
+
+      // 4. Navigate to battle page
+      router.push(`/battle/${selectedBattleId}`);
+      toast.success("Successfully joined battle!");
+    } catch (error) {
+      console.error("Join battle error:", error);
+      toast.error("Failed to join battle");
+    } finally {
+      setIsProcessing(false);
+      setSelectedRobotId(null);
+      setSelectedBattleId(null);
+    }
   };
+
+  const isDisabled =
+    !selectedRobotId ||
+    !selectedBattleId ||
+    !address ||
+    isProcessing ||
+    joinBattle.isPending;
 
   if (isLoading) {
     return <div>Loading rooms...</div>;
@@ -141,10 +169,14 @@ export function BattlesList() {
                 </Select>
                 <Button
                   className="w-full"
-                  disabled={!selectedRobotId || joinBattle.isPending}
+                  disabled={isDisabled}
                   onClick={handleJoinBattle}
                 >
-                  {joinBattle.isPending ? "Joining..." : "Join Battle"}
+                  {isProcessing
+                    ? "Processing Transaction..."
+                    : joinBattle.isPending
+                      ? "Joining..."
+                      : "Join Battle"}
                 </Button>
               </div>
             </DialogContent>

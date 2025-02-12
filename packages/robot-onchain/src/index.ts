@@ -1,21 +1,41 @@
-import { createPublicClient, encodePacked, http, keccak256, type Address, type Hash, type WalletClient } from "viem";
-import type { avalanche } from 'viem/chains'; // Import appropriate chain
+import {
+  createPublicClient,
+  type Chain,
+  encodePacked,
+  http,
+  keccak256,
+  type Address,
+  type Hash,
+  type WalletClient,
+} from "viem";
 import { z } from "zod";
 import { ROBOTICA_ABI } from "./robotica";
 
-export type Mnemonic = `${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string}`;
-export const MnemonicSchema = z.custom<Mnemonic>()
+export type Mnemonic =
+  `${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string} ${string}`;
+export const MnemonicSchema = z.custom<Mnemonic>();
 
-export const AddressSchema = z.custom<Address>()
+export const AddressSchema = z.custom<Address>();
 
 export type RoboticaOnchain = {
   // Core functions
-  enterGame: (props: { gameId: bigint, signature: Address }) => Promise<Hash>;
-  claimPrize: (props: { amount: bigint, gameId: bigint, signature: Address }) => Promise<Hash>;
+  enterGame: (props: { gameId: bigint; signature: Address }) => Promise<Hash>;
+  claimPrize: (props: {
+    amount: bigint;
+    gameId: bigint;
+    signature: Address;
+  }) => Promise<Hash>;
 
   // Signature generation
-  generateEnterGameSignature: (props: { user: Address, gameId: bigint }) => Promise<Address>;
-  generateClaimPrizeSignature: (props: { amount: bigint, user: Address, gameId: bigint }) => Promise<Address>;
+  generateEnterGameSignature: (props: {
+    user: Address;
+    gameId: bigint;
+  }) => Promise<Address>;
+  generateClaimPrizeSignature: (props: {
+    amount: bigint;
+    user: Address;
+    gameId: bigint;
+  }) => Promise<Address>;
 
   // Utility functions
   getNonce: () => Promise<bigint>;
@@ -23,109 +43,144 @@ export type RoboticaOnchain = {
   getSignerAddress: () => Promise<Address>;
 };
 
-export const createRoboticaOnchain = (config: {
+export const createRoboticaOnchain = ({
+  walletClient,
+  contractAddress,
+  chain,
+}: {
   walletClient: WalletClient;
-  contractAddress: Address;
-  chain: typeof avalanche;
-}): RoboticaOnchain => {
+  contractAddress: `0x${string}`;
+  chain: Chain;
+}) => {
   // Create public client for reading state
   const publicClient = createPublicClient({
-    chain: config.chain,
-    transport: http("https://avalanche-mainnet.infura.io/v3/28WCp5SV03K0Sk7cQGzJDXgAp7u")
+    chain: chain,
+    transport: http(process.env.AVALANCHE_RPC_URL),
   });
 
   // Get account from wallet client
-  const account = config.walletClient.account;
-  if (!account) throw new Error('Wallet client must have an account');
+  const account = walletClient.account;
+  if (!account) throw new Error("Wallet client must have an account");
 
-  const generateEnterGameSignature = async (props: { user: Address, gameId: bigint }): Promise<`0x${string}`> => {
+  const generateEnterGameSignature = async ({
+    user,
+    gameId,
+  }: {
+    user: `0x${string}`;
+    gameId: bigint;
+  }): Promise<`0x${string}`> => {
+    // Add debug logging
+    console.log("Generating enter game signature", { user, gameId });
+
     // Get current nonce
     const nonce = await publicClient.readContract({
-      address: config.contractAddress,
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'getNonce',
-      args: [props.user]
+      functionName: "getNonce",
+      args: [user],
     });
 
     // Create message hash for entering game - match the contract's encoding
-    const encodedMessage = keccak256(encodePacked(
-      ['address', 'uint256', 'string', 'address', 'uint256'],
-      [props.user, props.gameId, 'ENTER', config.contractAddress, nonce]
-    ));
+    const encodedMessage = keccak256(
+      encodePacked(
+        ["address", "uint256", "string", "address", "uint256"],
+        [user, gameId, "ENTER", contractAddress, nonce]
+      )
+    );
 
     // Sign the message
-    const signature = await config.walletClient.signMessage({
+    const signature = await walletClient.signMessage({
       account,
-      message: { raw: encodedMessage }
+      message: { raw: encodedMessage },
     });
 
     return signature;
   };
 
-  const generateClaimPrizeSignature = async (props: { amount: bigint, user: Address, gameId: bigint }): Promise<`0x${string}`> => {
+  const generateClaimPrizeSignature = async (props: {
+    amount: bigint;
+    user: Address;
+    gameId: bigint;
+  }): Promise<`0x${string}`> => {
     // Get current nonce
     const nonce = await publicClient.readContract({
-      address: config.contractAddress,
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'getNonce',
-      args: [props.user]
+      functionName: "getNonce",
+      args: [props.user],
     });
 
     // Create message hash for claiming prize - match the contract's encoding
-    const encodedMessage = keccak256(encodePacked(
-      ['address', 'uint256', 'uint256', 'string', 'address', 'uint256'],
-      [props.user, props.gameId, props.amount, 'CLAIM', config.contractAddress, nonce]
-    ));
+    const encodedMessage = keccak256(
+      encodePacked(
+        ["address", "uint256", "uint256", "string", "address", "uint256"],
+        [
+          props.user,
+          props.gameId,
+          props.amount,
+          "CLAIM",
+          contractAddress,
+          nonce,
+        ]
+      )
+    );
 
     // Sign the message
-    const signature = await config.walletClient.signMessage({
+    const signature = await walletClient.signMessage({
       account,
-      message: { raw: encodedMessage }
+      message: { raw: encodedMessage },
     });
 
     return signature;
   };
 
-  const enterGame = async (props: { gameId: bigint, signature: `0x${string}` }): Promise<Hash> => {
+  const enterGame = async (props: {
+    gameId: bigint;
+    signature: `0x${string}`;
+  }): Promise<Hash> => {
     // Read entry fee from contract
     const entryFee = await publicClient.readContract({
-      address: config.contractAddress,
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'entryFee',
+      functionName: "entryFee",
     });
 
     // Send transaction
-    return config.walletClient.writeContract({
-      address: config.contractAddress,
+    return walletClient.writeContract({
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'enterGame',
+      functionName: "enterGame",
       args: [props.gameId, props.signature],
       account: account,
-      chain: config.chain,
-      value: entryFee
+      chain: chain,
+      value: entryFee,
     });
   };
 
-  const claimPrize = async (props: { amount: bigint, gameId: bigint, signature: `0x${string}` }): Promise<Hash> => {
+  const claimPrize = async (props: {
+    amount: bigint;
+    gameId: bigint;
+    signature: `0x${string}`;
+  }): Promise<Hash> => {
     // Simulate transaction first
     const { request } = await publicClient.simulateContract({
-      address: config.contractAddress,
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'claimPrize',
+      functionName: "claimPrize",
       args: [props.gameId, props.amount, props.signature],
-      account: account
+      account: account,
     });
 
     // Send transaction
-    return config.walletClient.writeContract(request);
+    return walletClient.writeContract(request);
   };
 
   const getNonce = async (): Promise<bigint> => {
     const result = await publicClient.readContract({
-      address: config.contractAddress,
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'getNonce',
-      args: [account.address]
+      functionName: "getNonce",
+      args: [account.address],
     });
 
     return result;
@@ -133,21 +188,19 @@ export const createRoboticaOnchain = (config: {
 
   const getEntryFee = async (): Promise<bigint> => {
     return publicClient.readContract({
-      address: config.contractAddress,
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'entryFee',
+      functionName: "entryFee",
     });
   };
-
 
   const getSignerAddress = async (): Promise<Address> => {
     return publicClient.readContract({
-      address: config.contractAddress,
+      address: contractAddress,
       abi: ROBOTICA_ABI,
-      functionName: 'signerAddress',
+      functionName: "signerAddress",
     });
   };
-
 
   return {
     enterGame,
@@ -156,6 +209,6 @@ export const createRoboticaOnchain = (config: {
     generateClaimPrizeSignature,
     getNonce,
     getEntryFee,
-    getSignerAddress
+    getSignerAddress,
   };
 };

@@ -7,7 +7,9 @@ import {
   getBattleEvents,
   getUserRobots,
   joinBattle,
-  listBattles
+  listBattles,
+  generateGameSignature,
+  generateClaimSignature,
 } from "./robotActions";
 import { robotClient } from "./robotClient";
 
@@ -84,6 +86,33 @@ export const useListBattles = (props: { page?: string; limit?: string }) => {
       listBattles({
         page: props.page,
         limit: props.limit,
+        robotClient,
+      }),
+  });
+};
+
+export const useGenerateGameSignature = () => {
+  return useMutation({
+    mutationFn: (props: { gameId: string; userAddress: string }) =>
+      generateGameSignature({
+        gameId: props.gameId,
+        userAddress: props.userAddress,
+        robotClient,
+      }),
+  });
+};
+
+export const useGenerateClaimSignature = () => {
+  return useMutation({
+    mutationFn: (props: {
+      gameId: string;
+      userAddress: string;
+      amount: string;
+    }) =>
+      generateClaimSignature({
+        gameId: props.gameId,
+        userAddress: props.userAddress,
+        amount: props.amount,
         robotClient,
       }),
   });

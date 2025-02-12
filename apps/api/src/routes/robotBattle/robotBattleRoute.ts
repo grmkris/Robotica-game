@@ -815,6 +815,26 @@ export const generateGameSignatureRoute = new OpenAPIHono<{
           },
         },
       },
+      400: {
+        description: "Invalid request",
+        content: {
+          "application/json": {
+            schema: z.object({
+              message: z.string(),
+            }),
+          },
+        },
+      },
+      500: {
+        description: "Server error",
+        content: {
+          "application/json": {
+            schema: z.object({
+              message: z.string(),
+            }),
+          },
+        },
+      },
     },
   }),
   async (c) => {
@@ -827,12 +847,23 @@ export const generateGameSignatureRoute = new OpenAPIHono<{
         throw new HTTPException(400, { message: "Invalid Ethereum address" });
       }
 
+      // Remove 'bat' prefix from gameId and convert to BigInt
+      const numericGameId = gameId.replace("bat", "");
+      logger.info("Generating game signature", {
+        gameId,
+        numericGameId,
+        userAddress,
+      });
+
       // Create wallet client with backend mnemonic
       const account = mnemonicToAccount(env.SIGNER_MNEMONIC);
+      logger.info("Created account from mnemonic");
+
       const walletClient = createWalletClient({
         account,
-        transport: http(),
+        transport: http(env.AVALANCHE_RPC_URL),
       });
+      logger.info("Created wallet client");
 
       // Create Robotica contract instance
       const robotica = createRoboticaOnchain({
@@ -840,18 +871,33 @@ export const generateGameSignatureRoute = new OpenAPIHono<{
         contractAddress: env.CONTRACT_ADDRESS as `0x${string}`,
         chain: avalanche,
       });
-
-      // Generate signature
-      const signature = await robotica.generateEnterGameSignature({
-        user: userAddress as `0x${string}`,
-        gameId: BigInt(gameId),
+      logger.info("Created contract instance", {
+        contractAddress: env.CONTRACT_ADDRESS,
       });
 
-      return c.json({ signature });
+      // Generate signature with numeric gameId
+      const signature = await robotica.generateEnterGameSignature({
+        user: userAddress as `0x${string}`,
+        gameId: BigInt(numericGameId),
+      });
+      logger.info("Generated signature", { signature });
+
+      return c.json({ signature }, { status: 200 });
     } catch (error) {
-      logger.error("Failed to generate game signature:", error);
+      // More detailed error logging
+      logger.error("Failed to generate game signature:", {
+        error,
+        gameId,
+        userAddress,
+        contractAddress: env.CONTRACT_ADDRESS,
+        mnemonic: env.SIGNER_MNEMONIC ? "present" : "missing",
+      });
+
       throw new HTTPException(500, {
-        message: "Failed to generate game signature",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate game signature",
       });
     }
   }
@@ -905,7 +951,7 @@ export const generateClaimSignatureRoute = new OpenAPIHono<{
       const account = mnemonicToAccount(env.SIGNER_MNEMONIC);
       const walletClient = createWalletClient({
         account,
-        transport: http(),
+        transport: http(env.AVALANCHE_RPC_URL),
       });
 
       // Create Robotica contract instance
