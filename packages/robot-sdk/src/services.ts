@@ -19,8 +19,8 @@ export const ROBOT_SERVICE_URLS: Record<
 		cookieDomain: "localhost",
 	},
 	prod: {
-		api: "https://api.robotica.com",
-		frontend: "https://robotica.com",
-		cookieDomain: "robotica.com",
+		api: "https://api.robotica.gg",
+		frontend: "https://robotica.gg",
+		cookieDomain: "robotica.gg",
 	},
 } as const;
