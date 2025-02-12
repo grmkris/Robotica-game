@@ -17,6 +17,10 @@ import { createMediaGenClient } from "cat-media-gen";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { BattleId, RobotId, RoundId, UserId, generateId } from "robot-sdk";
+import { createRoboticaOnchain } from "robot-onchain";
+import { createWalletClient, http, isAddress } from "viem";
+import { mnemonicToAccount } from "viem/accounts";
+import { avalanche } from "viem/chains";
 
 // Add to the top of the file with other env variables
 const mediaGen = createMediaGenClient({ falApiKey: env.FAL_API_KEY });
@@ -779,6 +783,155 @@ const listBattlesRoute = new OpenAPIHono<{
   }
 );
 
+// Add new routes for generating signatures
+export const generateGameSignatureRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "post",
+    path: "/generate-game-signature",
+    tags: ["RobotBattle"],
+    summary: "Generate signature for entering a game",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              gameId: z.string(),
+              userAddress: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Signature generated successfully",
+        content: {
+          "application/json": {
+            schema: z.object({
+              signature: z.string(),
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const { gameId, userAddress } = c.req.valid("json");
+    const logger = c.get("logger");
+
+    try {
+      // Validate the userAddress
+      if (!isAddress(userAddress)) {
+        throw new HTTPException(400, { message: "Invalid Ethereum address" });
+      }
+
+      // Create wallet client with backend mnemonic
+      const account = mnemonicToAccount(env.SIGNER_MNEMONIC);
+      const walletClient = createWalletClient({
+        account,
+        transport: http(),
+      });
+
+      // Create Robotica contract instance
+      const robotica = createRoboticaOnchain({
+        walletClient,
+        contractAddress: env.CONTRACT_ADDRESS,
+        chain: avalanche,
+      });
+
+      // Generate signature
+      const signature = await robotica.generateEnterGameSignature({
+        user: userAddress as `0x${string}`,
+        gameId: BigInt(gameId),
+      });
+
+      return c.json({ signature });
+    } catch (error) {
+      logger.error("Failed to generate game signature:", error);
+      throw new HTTPException(500, {
+        message: "Failed to generate game signature",
+      });
+    }
+  }
+);
+
+export const generateClaimSignatureRoute = new OpenAPIHono<{
+  Variables: ContextVariables;
+}>().openapi(
+  createRoute({
+    method: "post",
+    path: "/generate-claim-signature",
+    tags: ["RobotBattle"],
+    summary: "Generate signature for claiming a prize",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: z.object({
+              gameId: z.string(),
+              userAddress: z.string(),
+              amount: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Signature generated successfully",
+        content: {
+          "application/json": {
+            schema: z.object({
+              signature: z.string(),
+            }),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const { gameId, userAddress, amount } = c.req.valid("json");
+    const logger = c.get("logger");
+
+    try {
+      // Validate the userAddress
+      if (!isAddress(userAddress)) {
+        throw new HTTPException(400, { message: "Invalid Ethereum address" });
+      }
+
+      // Create wallet client with backend mnemonic
+      const account = mnemonicToAccount(env.SIGNER_MNEMONIC);
+      const walletClient = createWalletClient({
+        account,
+        transport: http(),
+      });
+
+      // Create Robotica contract instance
+      const robotica = createRoboticaOnchain({
+        walletClient,
+        contractAddress: env.CONTRACT_ADDRESS,
+        chain: avalanche,
+      });
+
+      // Generate signature
+      const signature = await robotica.generateClaimPrizeSignature({
+        user: userAddress as `0x${string}`,
+        gameId: BigInt(gameId),
+        amount: BigInt(amount),
+      });
+
+      return c.json({ signature });
+    } catch (error) {
+      logger.error("Failed to generate claim signature:", error);
+      throw new HTTPException(500, {
+        message: "Failed to generate claim signature",
+      });
+    }
+  }
+);
+
 // Refactor routes with better RESTful patterns
 export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   // Robots resource
@@ -791,4 +944,6 @@ export const robotBattleApp = new OpenAPIHono<{ Variables: ContextVariables }>()
   .route("/battles", joinBattleRoute) // POST /battles/:battleId/join
   .route("/battles", startBattleRoute) // POST /battles/:battleId/start
   .route("/battles", battleEventsRoute) // GET /battles/:battleId/events
-  .route("/battles", listBattlesRoute); // GET /battles
+  .route("/battles", listBattlesRoute) // GET /battles
+  .route("/generate-game-signature", generateGameSignatureRoute)
+  .route("/generate-claim-signature", generateClaimSignatureRoute);

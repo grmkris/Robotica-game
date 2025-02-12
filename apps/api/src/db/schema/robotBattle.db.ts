@@ -74,6 +74,7 @@ export const BattleTable = pgTable("battles", {
     .notNull()
     .references(() => users.id)
     .$type<UserId>(),
+  gameId: varchar("game_id", { length: 255 }),
 });
 
 // Battle Robots table
