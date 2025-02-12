@@ -4,8 +4,11 @@
 
 @layer base {
   :root {
-    --font-sans: 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: "Inter", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+    --font-orbitron: "Orbitron", sans-serif;
+    --font-rajdhani: "Rajdhani", sans-serif;
+    --font-play: "Play", sans-serif;
 
     --background: 220 44% 100%;
     --foreground: 220 67% 0%;
@@ -35,6 +38,9 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --neon-cyan: #0ff;
+    --neon-pink: #ff69b4;
+    --neon-blue: #00f;
   }
 
   html.dark,
@@ -88,10 +94,17 @@
     font-feature-settings: "ss01";
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    background-image: url("/background.jpg");
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+      url("/background.png");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    min-height: 100vh;
+    background-attachment: fixed;
+    @media (min-width: 1920px) {
+      background-size: contain;
+      background-color: #0a192f;
+    }
   }
   .dark {
     --sidebar-background: 240 5.9% 10%;
@@ -111,5 +124,63 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+.cyberpunk-title {
+  font-family: var(--font-orbitron);
+  color: var(--neon-cyan);
+  text-shadow:
+    0 0 10px var(--neon-cyan),
+    0 0 20px var(--neon-cyan),
+    0 0 40px var(--neon-cyan);
+  letter-spacing: 2px;
+  animation: flicker 4s infinite alternate;
+}
+
+.cyberpunk-text {
+  font-family: var(--font-rajdhani);
+  color: #e0e7ff;
+  letter-spacing: 0.5px;
+}
+
+.cyberpunk-button {
+  font-family: var(--font-play);
+  background: linear-gradient(45deg, #00f5ff, #00a6ff);
+  border: 2px solid var(--neon-cyan);
+  box-shadow:
+    0 0 10px var(--neon-cyan),
+    inset 0 0 10px var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+}
+
+.cyberpunk-button:hover {
+  background: linear-gradient(45deg, #00a6ff, #00f5ff);
+  box-shadow:
+    0 0 20px var(--neon-cyan),
+    inset 0 0 20px var(--neon-cyan);
+  transform: translateY(-2px);
+}
+
+@keyframes flicker {
+  0%,
+  19.999%,
+  22%,
+  62.999%,
+  64%,
+  64.999%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  21.999%,
+  63%,
+  63.999%,
+  65%,
+  69.999% {
+    opacity: 0.8;
   }
 }

@@ -1,42 +1,46 @@
 "use client";
 
-import { CreateRobot } from "./_lib/robotLib/components/CreateRobot";
+import { Button } from "@/components/ui/button";
 import { ConnectWallet } from "@/components/ConnectWallet";
 import { useAuth } from "./auth/useAuth";
 import { Header } from "@/components/Header";
+import { useRouter } from "next/navigation";
+import { IsometricLoader } from "./_lib/robotLib/components/IsometricLoader";
 
-export default function Home() {
+export default function LandingPage() {
   const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
-  console.log("Auth state:", { isAuthenticated, isLoading });
+  const handleEnterArena = () => {
+    router.push("/dashboard");
+  };
 
   if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="flex flex-1 flex-col items-center justify-center">
-          <h2 className="mb-8 text-2xl font-bold text-cyan-400">
-            Connect your wallet to enter the arena
-          </h2>
-          <ConnectWallet />
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <IsometricLoader />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-900 text-white">
-      <Header />
-      <main className="container mx-auto flex-1 p-6">
-        <div className="mx-auto max-w-2xl">
-          <CreateRobot />
-          {/* We can add RobotList and BattleArena components here later */}
-        </div>
-      </main>
+    <div className="flex min-h-screen flex-col">
+      <Header onEnterArena={handleEnterArena} />
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <h1 className="cyberpunk-title mb-8 text-5xl font-bold md:text-7xl">
+          ROBOTICA
+        </h1>
+        <p className="cyberpunk-text mb-12 max-w-2xl text-center text-xl leading-relaxed md:text-2xl">
+          Connect your wallet to enter the arena and create your battle robot
+        </p>
+        {!isAuthenticated ? (
+          <ConnectWallet />
+        ) : (
+          <Button onClick={handleEnterArena} className="cyberpunk-button">
+            Enter Arena
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

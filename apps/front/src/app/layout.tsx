@@ -2,7 +2,13 @@ import { Providers } from "@/components/providers";
 import { serverEnvs } from "@/env/serverEnvs";
 import "@/styles/globals.css";
 import "@/styles/layout.css";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import {
+  Inter,
+  JetBrains_Mono,
+  Orbitron,
+  Rajdhani,
+  Play,
+} from "next/font/google";
 import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 import "stop-runaway-react-effects/hijack";
@@ -32,6 +38,23 @@ const jb = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
+});
+
+const rajdhani = Rajdhani({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-rajdhani",
+});
+
+const play = Play({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-play",
+});
+
 export default async function RootLayout({
   children,
 }: {
@@ -40,7 +63,12 @@ export default async function RootLayout({
   const cookies = (await headers()).get("cookie");
 
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning className="h-full">
+    <html
+      lang="en"
+      dir="ltr"
+      suppressHydrationWarning
+      className={`${orbitron.variable} ${rajdhani.variable} ${play.variable} ${serverEnvs.NODE_ENV === "development" ? "debug-screens" : ""} antialiased`}
+    >
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
@@ -61,13 +89,9 @@ export default async function RootLayout({
         />
       </head>
 
-      <body
-        className={`${serverEnvs.NODE_ENV === "development" ? "debug-screens" : ""} antialiased`}
-      >
+      <body>
         <div id="main-content">
-          <Providers cookies={cookies}>
-            {children}
-          </Providers>
+          <Providers cookies={cookies}>{children}</Providers>
           <Toaster position="top-center" className="!fixed !z-[9999]" />
         </div>
       </body>

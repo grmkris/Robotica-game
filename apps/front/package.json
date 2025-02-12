@@ -23,6 +23,7 @@
   "dependencies": {
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^3.10.0",
+    "@lottiefiles/dotlottie-react": "^0.13.0",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.5",
     "@radix-ui/react-avatar": "^1.1.2",
@@ -79,6 +80,7 @@
     "react-hook-form": "^7.54.2",
     "recharts": "^2.15.1",
     "resend": "4.1.1",
+    "robot-sdk": "workspace:*",
     "server-only": "^0.0.1",
     "sonner": "^1.7.3",
     "stop-runaway-react-effects": "^2.0.0",
@@ -90,8 +92,7 @@
     "vaul": "^1.1.2",
     "viem": "~2.22.17",
     "wagmi": "^2.14.9",
-    "zod": "^3.24.1",
-    "robot-sdk": "workspace:*"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.7",

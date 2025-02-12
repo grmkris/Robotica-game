@@ -32,54 +32,57 @@ type UserResponse = {
 
 export const createRobotSiweAuth = (props: {
   apiClient: RobotClient;
-}): RobotSiweAuth => ({
-  getCsrfToken: async () => {
-    const response = await props.apiClient.auth.siwe.nonce.$get();
-    const data = (await response.json()) as NonceResponse;
-    return data.nonce;
-  },
+}): RobotSiweAuth => {
+  console.log(props.apiClient);
+  return {
+    getCsrfToken: async () => {
+      const response = await props.apiClient.auth.siwe.nonce.$get();
+      const data = (await response.json()) as NonceResponse;
+      return data.nonce;
+    },
 
-  signIn: async ({ message, signature, callbackUrl, redirect }) => {
-    const response = await props.apiClient.auth.siwe.verify.$post({
-      json: { message, signature },
-    });
-    const data = (await response.json()) as VerifyResponse;
-    if (!data.ok) return { ok: false };
-    if (redirect) {
-      window.location.href = callbackUrl;
-    }
-    return { ok: true };
-  },
+    signIn: async ({ message, signature, callbackUrl, redirect }) => {
+      const response = await props.apiClient.auth.siwe.verify.$post({
+        json: { message, signature },
+      });
+      const data = (await response.json()) as VerifyResponse;
+      if (!data.ok) return { ok: false };
+      if (redirect) {
+        window.location.href = callbackUrl;
+      }
+      return { ok: true };
+    },
 
-  signOut: async ({ redirect }) => {
-    await props.apiClient.auth.logout.$get({
-      query: { redirect },
-    });
-    return true;
-  },
+    signOut: async ({ redirect }) => {
+      await props.apiClient.auth.logout.$get({
+        query: { redirect },
+      });
+      return true;
+    },
 
-  getSession: async () => {
-    const response = await props.apiClient.auth.me.$get();
-    if (!response.ok) return null;
-    const data = await response.json();
-    const wallet = data.wallets[0];
-    if (!wallet) return null;
-    const session: SIWESession = {
-      address: wallet.address,
-      chainId: avalanche.id,
-    };
-    console.log("session", session);
-    return session;
-  },
+    getSession: async () => {
+      const response = await props.apiClient.auth.me.$get();
+      if (!response.ok) return null;
+      const data = await response.json();
+      const wallet = data.wallets[0];
+      if (!wallet) return null;
+      const session: SIWESession = {
+        address: wallet.address,
+        chainId: avalanche.id,
+      };
+      console.log("session", session);
+      return session;
+    },
 
-  verifyMessage: async ({ message, signature }) => {
-    const response = await props.apiClient.auth.siwe.verify.$post({
-      json: { message, signature },
-    });
-    const data = (await response.json()) as VerifyResponse;
-    return data.ok;
-  },
-});
+    verifyMessage: async ({ message, signature }) => {
+      const response = await props.apiClient.auth.siwe.verify.$post({
+        json: { message, signature },
+      });
+      const data = (await response.json()) as VerifyResponse;
+      return data.ok;
+    },
+  };
+};
 
 const auth = createRobotSiweAuth({
   apiClient: robotClient,
@@ -105,6 +108,7 @@ export const siweConfig = createSIWEConfig({
   nonceRefetchIntervalMs: 1000 * 60 * 5, // 5 minutes
   onSignIn: async () => {
     console.log("onSignIn");
+    window.location.href = "/dashboard";
   },
   onSignOut: async () => {
     console.log("onSignOut");

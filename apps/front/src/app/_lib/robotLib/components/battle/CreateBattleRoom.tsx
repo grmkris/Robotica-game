@@ -1,39 +1,79 @@
-import { useCreateBattle } from "@/app/_lib/robotLib/robotHooks";
+import {
+  useCreateBattle,
+  useGetUserRobots,
+} from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RobotId } from "robot-sdk";
 
-interface CreateBattleRoomProps {
-  selectedRobotId: string | null;
-}
-
-interface CreateRoomResponse {
-  roomId: string;
-  battleId: string | null;
-}
-
-export function CreateBattleRoom({ selectedRobotId }: CreateBattleRoomProps) {
-  const queryClient = useQueryClient();
-  const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+export function CreateBattleRoom() {
   const router = useRouter();
-
+  const [selectedRobotId, setSelectedRobotId] = useState<RobotId | null>(null);
+  const { data: userRobots } = useGetUserRobots();
   const createBattleMutation = useCreateBattle();
 
+  const handleCreateBattle = () => {
+    if (!selectedRobotId) return;
+
+    createBattleMutation.mutate(
+      { robot1Id: selectedRobotId },
+      {
+        onSuccess: (data) => {
+          console.log("Battle created:", data);
+          router.push(`/battle/${data.battleId}`);
+        },
+      },
+    );
+  };
+
   return (
-    <Button
-      onClick={() => createBattleMutation.mutate({ robot1Id: RobotId.parse(selectedRobotId) })}
-      disabled={!selectedRobotId || createBattleMutation.isPending}
-      className="w-full"
-    >
-      {createBattleMutation.isPending
-        ? "Creating..."
-        : createdRoomId
-          ? "Waiting for opponent..."
-          : selectedRobotId
-            ? "Create Battle Room"
-            : "Select a Robot First"}
-    </Button>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Create Battle</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Battle</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Select
+            onValueChange={(value) => setSelectedRobotId(RobotId.parse(value))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Choose your robot" />
+            </SelectTrigger>
+            <SelectContent>
+              {userRobots?.robots.map((robot) => (
+                <SelectItem key={robot.id} value={robot.id}>
+                  {robot.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            className="w-full"
+            disabled={!selectedRobotId || createBattleMutation.isPending}
+            onClick={handleCreateBattle}
+          >
+            {createBattleMutation.isPending ? "Creating..." : "Create Battle"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

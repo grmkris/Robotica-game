@@ -14,19 +14,23 @@ export interface CatImageGenerationOptions {
   prompt: string;
   seed?: number;
   imageSize?:
-  | "square_hd"
-  | "square"
-  | "portrait_4_3"
-  | "portrait_16_9"
-  | "landscape_16_9"
-  | "landscape_4_3";
+    | "square_hd"
+    | "square"
+    | "portrait_4_3"
+    | "portrait_16_9"
+    | "landscape_16_9"
+    | "landscape_4_3";
   numImages?: number;
+  width?: number;
+  height?: number;
 }
 
 const DEFAULT_OPTIONS: Partial<CatImageGenerationOptions> = {
-  imageSize: "square_hd",
+  imageSize: "landscape_16_9",
   numImages: 1,
   seed: Math.floor(Math.random() * 1000000),
+  width: 1024,
+  height: 576,
 };
 
 export interface ImageGenerationResult {

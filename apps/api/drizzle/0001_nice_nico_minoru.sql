@@ -1,1 +1,0 @@
-ALTER TYPE "public"."battle_status" ADD VALUE 'FAILED';
