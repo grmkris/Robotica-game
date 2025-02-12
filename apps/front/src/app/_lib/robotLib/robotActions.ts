@@ -37,20 +37,27 @@ export const createBattle = async (props: {
   ].$post({
     json: { robot1Id: props.robot1Id },
   });
+  if (response.status !== 200) {
+    throw new Error("Failed to create battle");
+  }
   return response.json();
 };
 
 export const joinBattle = async (props: {
   battleId: BattleId;
+  gameId: number;
   robotId: RobotId;
   robotClient: RobotClient;
 }) => {
   const response = await props.robotClient["robot-battle"].battles[
     ":battleId"
   ].join.$post({
-    param: { battleId: props.battleId },
+    param: { battleId: props.battleId, gameId: props.gameId },
     json: { robotId: props.robotId },
   });
+  if (response.status !== 200) {
+    throw new Error("Failed to join battle");
+  }
   return response.json();
 };
 
@@ -98,7 +105,7 @@ export const listBattles = async (props: {
 };
 
 export const generateGameSignature = async (props: {
-  gameId: string;
+  gameId: number;
   userAddress: string;
   robotClient: RobotClient;
 }) => {
@@ -110,11 +117,14 @@ export const generateGameSignature = async (props: {
       userAddress: props.userAddress,
     },
   });
+  if (response.status !== 200) {
+    throw new Error("Failed to generate game signature");
+  }
   return response.json();
 };
 
 export const generateClaimSignature = async (props: {
-  gameId: string;
+  gameId: number;
   userAddress: string;
   amount: string;
   robotClient: RobotClient;

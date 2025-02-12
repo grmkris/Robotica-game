@@ -34,9 +34,14 @@ export const useCreateBattle = () => {
 export const useJoinBattle = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (props: { battleId: BattleId; robotId: RobotId }) =>
+    mutationFn: (props: {
+      battleId: BattleId;
+      gameId: number;
+      robotId: RobotId;
+    }) =>
       joinBattle({
         battleId: props.battleId,
+        gameId: props.gameId,
         robotId: props.robotId,
         robotClient,
       }),
@@ -93,7 +98,7 @@ export const useListBattles = (props: { page?: string; limit?: string }) => {
 
 export const useGenerateGameSignature = () => {
   return useMutation({
-    mutationFn: (props: { gameId: string; userAddress: string }) =>
+    mutationFn: (props: { gameId: number; userAddress: string }) =>
       generateGameSignature({
         gameId: props.gameId,
         userAddress: props.userAddress,
@@ -105,7 +110,7 @@ export const useGenerateGameSignature = () => {
 export const useGenerateClaimSignature = () => {
   return useMutation({
     mutationFn: (props: {
-      gameId: string;
+      gameId: number;
       userAddress: string;
       amount: string;
     }) =>

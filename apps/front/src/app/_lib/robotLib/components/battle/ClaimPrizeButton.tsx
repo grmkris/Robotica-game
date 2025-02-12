@@ -7,12 +7,14 @@ import { claimPrize } from "../../robotContract";
 import type { BattleId } from "robot-sdk";
 
 interface ClaimPrizeButtonProps {
+  gameId: number;
   battleId: BattleId;
   prizeAmount: string;
   disabled?: boolean;
 }
 
 export function ClaimPrizeButton({
+  gameId,
   battleId,
   prizeAmount,
   disabled,
@@ -29,7 +31,7 @@ export function ClaimPrizeButton({
 
       // 1. Get claim signature from backend
       const signatureData = await generateSignature.mutateAsync({
-        gameId: battleId,
+        gameId: gameId,
         userAddress: address,
         amount: prizeAmount,
       });

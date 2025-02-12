@@ -449,6 +449,7 @@ export const joinBattleRoute = new OpenAPIHono<{
     request: {
       params: z.object({
         battleId: BattleId,
+        gameId: z.number(),
       }),
       body: {
         content: {
@@ -466,7 +467,8 @@ export const joinBattleRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              success: z.boolean(),
+              gameId: z.number(),
+              battleId: BattleId,
             }),
           },
         },
@@ -512,7 +514,7 @@ export const joinBattleRoute = new OpenAPIHono<{
     // Start battle simulation in background
     void resolveBattle({ battleId, db, logger });
 
-    return c.json({ success: true });
+    return c.json({ battleId, gameId: battle.gameId });
   }
 );
 
@@ -630,6 +632,7 @@ export const createBattleRoute = new OpenAPIHono<{
           "application/json": {
             schema: z.object({
               battleId: BattleId,
+              gameId: z.number(),
             }),
           },
         },
@@ -674,7 +677,7 @@ export const createBattleRoute = new OpenAPIHono<{
         robotId: robot1Id,
       });
 
-      return c.json({ battleId: battle.id });
+      return c.json({ battleId: battle.id, gameId: battle.gameId });
     } catch (error) {
       logger.error({
         msg: "Failed to create battle",
@@ -712,6 +715,7 @@ const listBattlesRoute = new OpenAPIHono<{
                 z.object({
                   id: BattleId,
                   status: BattleStatus,
+                  gameId: z.number(),
                   createdAt: z.coerce.date(),
                   createdBy: UserId,
                   completedAt: z.coerce.date().nullable(),
@@ -764,6 +768,7 @@ const listBattlesRoute = new OpenAPIHono<{
     const formattedBattles = battles.map((battle) => ({
       id: battle.id,
       status: battle.status,
+      gameId: battle.gameId,
       createdAt: battle.createdAt,
       createdBy: battle.createdBy,
       completedAt: battle.completedAt,
@@ -797,7 +802,7 @@ export const generateGameSignatureRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              gameId: z.string(),
+              gameId: z.number(),
               userAddress: z.string(),
             }),
           },
@@ -847,11 +852,8 @@ export const generateGameSignatureRoute = new OpenAPIHono<{
         throw new HTTPException(400, { message: "Invalid Ethereum address" });
       }
 
-      // Remove 'bat' prefix from gameId and convert to BigInt
-      const numericGameId = gameId.replace("bat", "");
       logger.info("Generating game signature", {
         gameId,
-        numericGameId,
         userAddress,
       });
 
@@ -875,10 +877,10 @@ export const generateGameSignatureRoute = new OpenAPIHono<{
         contractAddress: env.CONTRACT_ADDRESS,
       });
 
-      // Generate signature with numeric gameId
+      // Generate signature with gameId directly as BigInt
       const signature = await robotica.generateEnterGameSignature({
         user: userAddress as `0x${string}`,
-        gameId: BigInt(numericGameId),
+        gameId: BigInt(gameId),
       });
       logger.info("Generated signature", { signature });
 
@@ -916,7 +918,7 @@ export const generateClaimSignatureRoute = new OpenAPIHono<{
         content: {
           "application/json": {
             schema: z.object({
-              gameId: z.string(),
+              gameId: z.number(),
               userAddress: z.string(),
               amount: z.string(),
             }),
@@ -961,7 +963,7 @@ export const generateClaimSignatureRoute = new OpenAPIHono<{
         chain: avalanche,
       });
 
-      // Generate signature
+      // Generate signature with gameId as BigInt
       const signature = await robotica.generateClaimPrizeSignature({
         user: userAddress as `0x${string}`,
         gameId: BigInt(gameId),

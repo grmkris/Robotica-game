@@ -9,8 +9,7 @@ import {
 import { avalanche } from "viem/chains";
 
 // Contract address from environment variable
-const CONTRACT_ADDRESS = process.env
-  .NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+const CONTRACT_ADDRESS = "0xf6f1288521d772e881ecc2b8cc2c147a33f6a30c";
 
 // Create public client for transaction watching
 const publicClient = createPublicClient({
@@ -40,17 +39,19 @@ const ensureHexSignature = (signature: string): `0x${string}` => {
 const getBattleNumericId = (battleId: string) => battleId.replace("bat", "");
 
 // Contract interactions using user's wallet
-export const enterGame = async (gameId: string, signature: string) => {
-  const walletClient = await getWalletClient();
+export const enterGame = async (
+  gameId: bigint,
+  signature: string,
+  walletClient: WalletClient,
+) => {
   const contract = createRoboticaOnchain({
     walletClient,
     contractAddress: CONTRACT_ADDRESS,
     chain: avalanche,
   });
 
-  const numericGameId = getBattleNumericId(gameId);
   const hash = await contract.enterGame({
-    gameId: BigInt(numericGameId),
+    gameId: gameId,
     signature: ensureHexSignature(signature),
   });
 

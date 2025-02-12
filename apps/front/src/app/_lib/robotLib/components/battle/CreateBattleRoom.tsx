@@ -21,7 +21,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RobotId } from "robot-sdk";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { toast } from "sonner";
 import { enterGame } from "../../robotContract";
 
@@ -33,7 +33,7 @@ export function CreateBattleRoom() {
   const { data: userRobots } = useGetUserRobots();
   const createBattleMutation = useCreateBattle();
   const generateSignature = useGenerateGameSignature();
-
+  const walletClient = useWalletClient();
   const handleCreateBattle = async () => {
     if (!selectedRobotId || !address) return;
 
@@ -47,12 +47,19 @@ export function CreateBattleRoom() {
 
       // 2. Get signature from backend
       const signatureData = await generateSignature.mutateAsync({
-        gameId: battleData.battleId,
+        gameId: battleData.gameId,
         userAddress: address,
       });
 
+      if (!walletClient.data) {
+        throw new Error("Wallet client not found");
+      }
       // 3. Send transaction using user's wallet and wait for confirmation
-      await enterGame(battleData.battleId, signatureData.signature);
+      await enterGame(
+        BigInt(battleData.gameId),
+        signatureData.signature,
+        walletClient.data,
+      );
 
       // 4. Navigate to battle page
       router.push(`/battle/${battleData.battleId}`);

@@ -1,7 +1,7 @@
 // config/index.tsx
 
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { base, baseSepolia } from "@reown/appkit/networks";
+import { avalanche } from "@reown/appkit/networks";
 import { cookieStorage, createStorage } from "wagmi";
 
 // Get projectId from environment variable
@@ -11,7 +11,7 @@ if (!REOWN_PROJECT_ID) {
   throw new Error("Project ID is not defined");
 }
 
-export const networks = [base, baseSepolia];
+export const networks = [avalanche];
 
 // Set up the Wagmi Adapter (Config)
 export const wagmiAdapter = new WagmiAdapter({

@@ -231,7 +231,7 @@ export declare const createRobotApi: (props: {
             input: {
                 json: {
                     amount: string;
-                    gameId: string;
+                    gameId: number;
                     userAddress: string;
                 };
             };
@@ -247,7 +247,7 @@ export declare const createRobotApi: (props: {
         $post: {
             input: {
                 json: {
-                    gameId: string;
+                    gameId: number;
                     userAddress: string;
                 };
             };
@@ -256,6 +256,30 @@ export declare const createRobotApi: (props: {
             };
             outputFormat: "json";
             status: 200;
+        } | {
+            input: {
+                json: {
+                    gameId: number;
+                    userAddress: string;
+                };
+            };
+            output: {
+                message: string;
+            };
+            outputFormat: "json";
+            status: 400;
+        } | {
+            input: {
+                json: {
+                    gameId: number;
+                    userAddress: string;
+                };
+            };
+            output: {
+                message: string;
+            };
+            outputFormat: "json";
+            status: 500;
         };
     };
 }, "/game-signature"> & import("hono/types").MergeSchemaPath<{
@@ -279,6 +303,7 @@ export declare const createRobotApi: (props: {
                         name: string;
                         imageUrl?: string | null | undefined;
                     }[];
+                    gameId: number;
                 }[];
                 page: number;
                 total: number;
@@ -327,6 +352,7 @@ export declare const createRobotApi: (props: {
             input: {
                 param: {
                     battleId: `bat${string}`;
+                    gameId: number;
                 };
             } & {
                 json: {
@@ -334,7 +360,8 @@ export declare const createRobotApi: (props: {
                 };
             };
             output: {
-                success: boolean;
+                battleId: `bat${string}`;
+                gameId: number;
             };
             outputFormat: "json";
             status: 200;
@@ -378,6 +405,7 @@ export declare const createRobotApi: (props: {
             };
             output: {
                 battleId: `bat${string}`;
+                gameId: number;
             };
             outputFormat: "json";
             status: 200;

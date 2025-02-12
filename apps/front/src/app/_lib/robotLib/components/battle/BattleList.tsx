@@ -13,7 +13,7 @@ import {
   type BattleStatus,
   type UserId,
 } from "robot-sdk";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { toast } from "sonner";
 import { enterGame } from "../../robotContract";
 import { BattleCard } from "./BattleCard";
@@ -53,6 +53,7 @@ export function BattlesList() {
   const [selectedBattleId, setSelectedBattleId] = useState<BattleId | null>(
     null,
   );
+  const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const generateSignature = useGenerateGameSignature();
 
@@ -67,26 +68,36 @@ export function BattlesList() {
 
   const joinBattle = useJoinBattle();
 
+  const walletClient = useWalletClient();
   const handleJoinBattle = async () => {
-    if (!selectedRobotId || !selectedBattleId || !address) return;
+    if (!selectedRobotId || !selectedBattleId || !address || !selectedGameId)
+      return;
 
     try {
       setIsProcessing(true);
 
       // 1. Join battle in our backend
-      await joinBattle.mutateAsync({
+      const battleData = await joinBattle.mutateAsync({
         battleId: selectedBattleId,
+        gameId: selectedGameId,
         robotId: selectedRobotId,
       });
 
       // 2. Get signature from backend
       const signatureData = await generateSignature.mutateAsync({
-        gameId: selectedBattleId,
+        gameId: battleData.gameId,
         userAddress: address,
       });
 
       // 3. Send transaction using user's wallet and wait for confirmation
-      await enterGame(selectedBattleId, signatureData.signature);
+      if (!walletClient.data) {
+        throw new Error("Wallet client not found");
+      }
+      await enterGame(
+        BigInt(battleData.gameId),
+        signatureData.signature,
+        walletClient.data,
+      );
 
       // 4. Navigate to battle page
       router.push(`/battle/${selectedBattleId}`);
@@ -98,6 +109,7 @@ export function BattlesList() {
       setIsProcessing(false);
       setSelectedRobotId(null);
       setSelectedBattleId(null);
+      setSelectedGameId(null);
     }
   };
 
@@ -128,6 +140,7 @@ export function BattlesList() {
               if (!open) {
                 setSelectedRobotId(null);
                 setSelectedBattleId(null);
+                setSelectedGameId(null);
               }
             }}
           >
@@ -141,7 +154,10 @@ export function BattlesList() {
                   completedAt={
                     room.completedAt ? new Date(room.completedAt) : null
                   }
-                  onJoin={() => setSelectedBattleId(room.id)}
+                  onJoin={() => {
+                    setSelectedBattleId(room.id);
+                    setSelectedGameId(room.gameId);
+                  }}
                   isLoading={joinBattle.isPending}
                 />
               </div>
