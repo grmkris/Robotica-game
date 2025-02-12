@@ -21,6 +21,7 @@ interface BattleCardProps {
   completedAt: Date | null;
   onJoin: () => void;
   isLoading?: boolean;
+  gameId: number;
 }
 
 export function BattleCard({
@@ -31,6 +32,7 @@ export function BattleCard({
   completedAt,
   onJoin,
   isLoading,
+  gameId,
 }: BattleCardProps) {
   return (
     <Card className="w-full">

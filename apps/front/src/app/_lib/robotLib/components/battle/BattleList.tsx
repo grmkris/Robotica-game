@@ -38,11 +38,23 @@ interface BattleRoom {
   robot1Id: RobotId;
   createdAt: Date;
   expiresAt: Date;
+  gameId: number;
 }
 
 interface JoinRoomResponse {
   battleId: BattleId;
   status: BattleStatus;
+}
+
+interface BattleCardProps {
+  id: string;
+  createdBy: string;
+  robots: Array<{ id: string; name: string; imageUrl?: string | null }>;
+  createdAt: Date;
+  completedAt: Date | null;
+  gameId: number;
+  onJoin: () => void;
+  isLoading?: boolean;
 }
 
 export function BattlesList() {
@@ -70,6 +82,7 @@ export function BattlesList() {
 
   const walletClient = useWalletClient();
   const handleJoinBattle = async () => {
+    debugger;
     if (!selectedRobotId || !selectedBattleId || !address || !selectedGameId)
       return;
 
@@ -154,7 +167,14 @@ export function BattlesList() {
                   completedAt={
                     room.completedAt ? new Date(room.completedAt) : null
                   }
+                  gameId={room.gameId}
                   onJoin={() => {
+                    console.log(
+                      "Setting battle:",
+                      room.id,
+                      "game:",
+                      room.gameId,
+                    );
                     setSelectedBattleId(room.id);
                     setSelectedGameId(room.gameId);
                   }}

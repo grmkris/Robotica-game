@@ -52,7 +52,10 @@ export const joinBattle = async (props: {
   const response = await props.robotClient["robot-battle"].battles[
     ":battleId"
   ].join.$post({
-    param: { battleId: props.battleId, gameId: props.gameId },
+    param: {
+      battleId: props.battleId,
+      gameId: props.gameId,
+    },
     json: { robotId: props.robotId },
   });
   if (response.status !== 200) {
