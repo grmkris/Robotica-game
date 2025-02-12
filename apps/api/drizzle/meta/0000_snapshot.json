@@ -1,5 +1,5 @@
 {
-  "id": "0f3da5e7-9cea-4743-aad4-c96a51ed3536",
+  "id": "024553dd-e42b-4cd9-98b5-97f4679bff14",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -790,6 +790,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "game_id": {
+          "name": "game_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

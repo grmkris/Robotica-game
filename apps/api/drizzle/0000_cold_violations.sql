@@ -107,7 +107,8 @@ CREATE TABLE "battles" (
 	"started_at" timestamp DEFAULT now() NOT NULL,
 	"completed_at" timestamp,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"created_by" varchar(255) NOT NULL
+	"created_by" varchar(255) NOT NULL,
+	"game_id" varchar(255)
 );
 --> statement-breakpoint
 CREATE TABLE "robots" (

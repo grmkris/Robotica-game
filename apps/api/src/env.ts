@@ -3,6 +3,35 @@ import { parseEnv } from "znv";
 import { z } from "zod";
 import { MnemonicSchema, AddressSchema } from "robot-onchain";
 
+// Create basic string schemas for Drizzle compatibility
+const mnemonicStringSchema = z.string().refine(
+  (value) => {
+    try {
+      return MnemonicSchema.parse(value);
+    } catch {
+      return false;
+    }
+  },
+  {
+    message: "Invalid mnemonic phrase",
+  }
+);
+
+const addressStringSchema = z.string().refine(
+  (value) => {
+    try {
+      return AddressSchema.parse(value);
+      // Also verify it starts with 0x
+      return value.startsWith("0x");
+    } catch {
+      return false;
+    }
+  },
+  {
+    message: "Invalid Ethereum address",
+  }
+);
+
 export const env = parseEnv(process.env, {
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -65,7 +94,7 @@ export const env = parseEnv(process.env, {
   OPENAI_API_KEY: z.string(),
 
   // Add blockchain-related environment variables with proper types
-  SIGNER_MNEMONIC: MnemonicSchema,
-  CONTRACT_ADDRESS: AddressSchema,
+  SIGNER_MNEMONIC: mnemonicStringSchema,
+  CONTRACT_ADDRESS: addressStringSchema,
   AVALANCHE_RPC_URL: z.string(),
 });

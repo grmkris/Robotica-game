@@ -837,7 +837,7 @@ export const generateGameSignatureRoute = new OpenAPIHono<{
       // Create Robotica contract instance
       const robotica = createRoboticaOnchain({
         walletClient,
-        contractAddress: env.CONTRACT_ADDRESS,
+        contractAddress: env.CONTRACT_ADDRESS as `0x${string}`,
         chain: avalanche,
       });
 
@@ -911,7 +911,7 @@ export const generateClaimSignatureRoute = new OpenAPIHono<{
       // Create Robotica contract instance
       const robotica = createRoboticaOnchain({
         walletClient,
-        contractAddress: env.CONTRACT_ADDRESS,
+        contractAddress: env.CONTRACT_ADDRESS as `0x${string}`,
         chain: avalanche,
       });
 
