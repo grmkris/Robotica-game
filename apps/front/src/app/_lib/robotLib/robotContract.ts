@@ -42,22 +42,26 @@ export const enterGame = async (props: {
   return receipt;
 };
 
-export const claimPrize = async (props: {
+export const claimPrize = async ({
+  gameId,
+  amount,
+  signature,
+  walletClient,
+}: {
   gameId: bigint;
   amount: bigint;
   signature: string;
   walletClient: WalletClient;
 }) => {
-  const { gameId, amount, signature, walletClient } = props;
-  const contract = createRoboticaOnchain({
+  const robotica = createRoboticaOnchain({
     walletClient,
     contractAddress: CONTRACT_ADDRESS,
     chain: avalanche,
   });
 
-  const hash = await contract.claimPrize({
-    gameId: gameId,
-    amount: amount,
+  const hash = await robotica.claimPrize({
+    gameId,
+    amount,
     signature: ensureHexSignature(signature),
   });
 

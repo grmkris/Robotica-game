@@ -229,6 +229,7 @@ export const getBattleByIdRoute = new OpenAPIHono<{
           "application/json": {
             schema: z.object({
               id: BattleId,
+              gameId: z.number(),
               status: BattleStatus,
               winnerId: RobotId.nullable(),
               startedAt: z.coerce.date(),

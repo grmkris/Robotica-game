@@ -383,6 +383,7 @@ export declare const createRobotApi: (props: {
                 winnerId: `rob${string}` | null;
                 startedAt: string;
                 completedAt: string | null;
+                gameId: number;
                 rounds: {
                     description: string;
                     id: `rnd${string}`;
