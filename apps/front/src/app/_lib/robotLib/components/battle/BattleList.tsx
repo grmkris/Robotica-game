@@ -90,6 +90,11 @@ export function BattlesList() {
       setIsProcessing(true);
 
       // 1. Join battle in our backend
+      console.log("Joining battle with:", {
+        battleId: selectedBattleId,
+        gameId: selectedGameId,
+        robotId: selectedRobotId,
+      });
       const battleData = await joinBattle.mutateAsync({
         battleId: selectedBattleId,
         gameId: selectedGameId,
@@ -169,12 +174,7 @@ export function BattlesList() {
                   }
                   gameId={room.gameId}
                   onJoin={() => {
-                    console.log(
-                      "Setting battle:",
-                      room.id,
-                      "game:",
-                      room.gameId,
-                    );
+                    console.log("Game ID selected:", room.gameId);
                     setSelectedBattleId(room.id);
                     setSelectedGameId(room.gameId);
                   }}

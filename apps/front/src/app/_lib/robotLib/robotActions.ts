@@ -54,9 +54,11 @@ export const joinBattle = async (props: {
   ].join.$post({
     param: {
       battleId: props.battleId,
+    },
+    json: {
+      robotId: props.robotId,
       gameId: props.gameId,
     },
-    json: { robotId: props.robotId },
   });
   if (response.status !== 200) {
     throw new Error("Failed to join battle");
