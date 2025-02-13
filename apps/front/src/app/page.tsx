@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ConnectWallet } from "@/components/ConnectWallet";
-import { useAuth } from "./auth/useAuth";
 import { Header } from "@/components/Header";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { IsometricLoader } from "./_lib/robotLib/components/IsometricLoader";
+import { useAuth } from "./auth/useAuth";
 
 export default function LandingPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,7 +39,7 @@ export default function LandingPage() {
             ROBOTICA
           </h1>
           <p className="cyberpunk-text mb-12 max-w-2xl text-center text-xl leading-relaxed md:text-2xl">
-            Connect your wallet to enter the arena and create your battle robot
+            Dream of your own robot agent and enter the arena, powered by cutting-edge entertainment AI agents.
           </p>
           {!isAuthenticated ? (
             <ConnectWallet />
@@ -66,43 +66,22 @@ export default function LandingPage() {
             <div className="grid gap-8 md:grid-cols-2">
               {/* Robot Creation */}
               <div className="cyberpunk-card rounded-lg border border-cyan-400/30 bg-black/50 p-6 backdrop-blur-sm">
-                <h3 className="mb-4 text-2xl text-cyan-400">Robot Creation</h3>
+                <h3 className="mb-4 text-2xl text-cyan-400">Agent Creation</h3>
                 <ul className="list-inside list-disc text-gray-300">
-                  <li>
-                    Players can create their robot using a prompt. The more
-                    specific you are, the closer the robot will be to your
-                    vision. Less specificity introduces more randomness.
-                  </li>
-                  <li>
-                    Be specific about materials, weapons, and tactics.
-                    Everything is taken into consideration during battles!
-                  </li>
-                  <li>You can create multiple robots on your account.</li>
+                  <li>Create your robot agent</li>
+                  <li>Specify materials, weapons, and tactics</li>
+                  <li>Build multiple robot agents per account</li>
                 </ul>
               </div>
 
               {/* AVAX Information Section */}
               <div className="cyberpunk-card rounded-lg border border-cyan-400/30 bg-black/50 p-6 backdrop-blur-sm">
-                <h3 className="mb-4 text-2xl text-cyan-400">
-                  AVAX Requirements
-                </h3>
+                <h3 className="mb-4 text-2xl text-cyan-400">AVAX Requirements</h3>
                 <ul className="list-inside list-disc text-gray-300">
-                  <li>
-                    Players must connect their wallet of choice on the AVAX
-                    blockchain.
-                  </li>
-                  <li>
-                    To create or join a room, players need at least 0.001 AVAX
-                    in their wallet.
-                  </li>
-                  <li>The winner of the battle can claim the prize.</li>
+                  <li>Connect wallet on AVAX network</li>
+                  <li>Minimum 0.001 AVAX to play</li>
+                  <li>Winners claim battle prizes</li>
                 </ul>
-                <p className="text-gray-300">
-                  Ensure you have at least 0.001 AVAX in your wallet to
-                  participate in battles. This is essential for creating or
-                  joining battle rooms. Connect your wallet and get ready to
-                  fight!
-                </p>
               </div>
             </div>
 
@@ -113,19 +92,9 @@ export default function LandingPage() {
             <div className="cyberpunk-card rounded-lg border border-cyan-400/30 bg-black/50 p-6 backdrop-blur-sm">
               <h3 className="mb-4 text-2xl text-cyan-400">Battle Mechanics</h3>
               <ul className="list-inside list-disc text-gray-300">
-                <li>
-                  Battles are overseen by our Smart Judge LLM, who also provides
-                  commentary on the rounds.
-                </li>
-                <li>
-                  The battle follows the principles of boxing or any other
-                  round-based sport, with a maximum of 10 rounds. A winner is
-                  decided if there is no knockout or finish before that.
-                </li>
-                <li>
-                  Everything that happens in previous rounds affects the
-                  following rounds, such as damage to your robot.
-                </li>
+                <li>Smart Agent Judge oversees battles</li>
+                <li>10-round maximum fights</li>
+                <li>Damage persists between rounds</li>
               </ul>
             </div>
           </div>
@@ -140,7 +109,7 @@ export default function LandingPage() {
             </h2>
             <div className="relative">
               {/* Vertical line */}
-              <div className="absolute left-1/2 h-full w-1 -translate-x-1/2 transform bg-gradient-to-b from-purple-400 to-cyan-400"></div>
+              <div className="absolute left-1/2 h-full w-1 -translate-x-1/2 transform bg-gradient-to-b from-purple-400 to-cyan-400" />
 
               {/* Roadmap items */}
               <div className="space-y-24">
@@ -149,8 +118,8 @@ export default function LandingPage() {
                     <div className="cyberpunk-card rounded-lg border border-purple-400/30 bg-black/50 p-6 backdrop-blur-sm">
                       <h3 className="mb-2 text-2xl text-purple-400">Phase 1</h3>
                       <ul className="list-inside list-disc text-gray-300">
-                        <li>Launch of v0 with Smart Judge.</li>
-                        <li>Robot Agents fight for rewards or free.</li>
+                        <li>Launch v0 with Smart Agent Judge</li>
+                        <li>Battle for rewards or practice</li>
                       </ul>
                     </div>
                   </div>
@@ -161,15 +130,12 @@ export default function LandingPage() {
                     <div className="cyberpunk-card rounded-lg border border-cyan-400/30 bg-black/50 p-6 backdrop-blur-sm">
                       <h3 className="mb-2 text-2xl text-cyan-400">Phase 2</h3>
                       <ul className="list-inside list-disc text-gray-300">
-                        <li>Implement robot persistence using NFTs.</li>
-                        <li>
-                          Players earn NFTs that grant knowledge to their agents
-                          until defeated.
-                        </li>
+                        <li>Robot Agent becomes an NFT</li>
+                        <li>Battle-tested robot agents gain knowledge</li>
                       </ul>
                     </div>
                   </div>
-                  <div className="absolute -top-4 left-1/2 z-0 h-4 w-4 -translate-x-1/2 transform rounded-full bg-cyan-400"></div>
+                  <div className="absolute -top-4 left-1/2 z-0 h-4 w-4 -translate-x-1/2 transform rounded-full bg-cyan-400" />
                 </div>
 
                 <div className="relative flex items-center justify-center">
@@ -177,15 +143,12 @@ export default function LandingPage() {
                     <div className="cyberpunk-card rounded-lg border border-purple-400/30 bg-black/50 p-6 backdrop-blur-sm">
                       <h3 className="mb-2 text-2xl text-purple-400">Phase 3</h3>
                       <ul className="list-inside list-disc text-gray-300">
-                        <li>Introduce multiple fighting arenas.</li>
-                        <li>
-                          Arenas will have unique traits (e.g., no gravity,
-                          lava, water).
-                        </li>
+                        <li>Multiple arena environments</li>
+                        <li>Unique arena effects (gravity, lava, water)</li>
                       </ul>
                     </div>
                   </div>
-                  <div className="absolute -top-4 left-1/2 z-0 h-4 w-4 -translate-x-1/2 transform rounded-full bg-purple-400"></div>
+                  <div className="absolute -top-4 left-1/2 z-0 h-4 w-4 -translate-x-1/2 transform rounded-full bg-purple-400" />
                 </div>
 
                 <div className="relative flex items-center justify-center">
@@ -193,14 +156,14 @@ export default function LandingPage() {
                     <div className="cyberpunk-card rounded-lg border border-cyan-400/30 bg-black/50 p-6 backdrop-blur-sm">
                       <h3 className="mb-2 text-2xl text-cyan-400">Phase 4</h3>
                       <ul className="list-inside list-disc text-gray-300">
-                        <li>Launch a token with staking options.</li>
-                        <li>
-                          Host tournaments and introduce additional features.
-                        </li>
+                        <li>Cross-chain expansion</li>
+                        <li>Global AI entertainment tournaments</li>
+                        <li>Token launch to support the ecosystem</li>
+                        <li>Cross-chain battle leagues</li>
                       </ul>
                     </div>
                   </div>
-                  <div className="absolute -top-4 left-1/2 z-0 h-4 w-4 -translate-x-1/2 transform rounded-full bg-cyan-400"></div>
+                  <div className="absolute -top-4 left-1/2 z-0 h-4 w-4 -translate-x-1/2 transform rounded-full bg-cyan-400" />
                 </div>
               </div>
             </div>

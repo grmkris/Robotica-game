@@ -133,9 +133,10 @@
   text-shadow:
     0 0 10px var(--neon-cyan),
     0 0 20px var(--neon-cyan),
-    0 0 40px var(--neon-cyan);
+    0 0 40px var(--neon-cyan),
+    0 0 80px var(--neon-cyan);
   letter-spacing: 2px;
-  animation: flicker 4s infinite alternate;
+  animation: glow 4s infinite alternate;
 }
 
 .cyberpunk-text {
@@ -164,58 +165,25 @@
   transform: translateY(-2px);
 }
 
-@keyframes flicker {
-  0%,
-  19.999%,
-  22%,
-  62.999%,
-  64%,
-  64.999%,
-  70%,
+@keyframes glow {
+  0% {
+    text-shadow:
+      0 0 10px var(--neon-cyan),
+      0 0 20px var(--neon-cyan),
+      0 0 40px var(--neon-cyan),
+      0 0 80px var(--neon-cyan),
+      0 0 120px var(--neon-cyan);
+  }
   100% {
-    opacity: 1;
-  }
-  20%,
-  21.999%,
-  63%,
-  63.999%,
-  65%,
-  69.999% {
-    opacity: 0.8;
+    text-shadow:
+      0 0 20px var(--neon-cyan),
+      0 0 40px var(--neon-cyan),
+      0 0 80px var(--neon-cyan),
+      0 0 120px var(--neon-cyan),
+      0 0 160px var(--neon-cyan);
   }
 }
 
-.cyberpunk-card {
-  position: relative;
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.cyberpunk-card::before {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, var(--neon-cyan), var(--neon-pink));
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.cyberpunk-card:hover::before {
-  opacity: 0.5;
-}
-
-.cyberpunk-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 0 20px rgba(0, 255, 255, 0.2),
-    0 0 30px rgba(0, 255, 255, 0.1);
-}
-
-/* Glitch effect for section titles */
 .cyberpunk-title:hover {
   animation: glitch 1s linear infinite;
 }
