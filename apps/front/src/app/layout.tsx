@@ -20,6 +20,22 @@ export const metadata: Metadata = {
   title: "Robotica",
   description:
     "Create your own robot and battle with other robots in a fun and creative way",
+  metadataBase: new URL("https://robotica.gg"),
+  openGraph: {
+    title: "Robotica",
+    description:
+      "Create your own robot and battle with other robots in a fun and creative way",
+    url: "https://robotica.gg",
+    siteName: "Robotica",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Robotica",
+    description:
+      "Create your own robot and battle with other robots in a fun and creative way",
+  },
   icons: {
     icon: [
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
