@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { siweConfig } from "@/siweConfig";
 import { REOWN_PROJECT_ID, wagmiAdapter } from "@/wagmiConfig";
 import { createAppKit } from "@reown/appkit";
-import { base, baseSepolia } from "@reown/appkit/networks";
+import { avalanche } from "@reown/appkit/networks";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
@@ -14,9 +14,9 @@ const queryClient = new QueryClient();
 
 // Set up metadata
 const metadata = {
-  name: "Cat Misha",
-  description: "Cat Misha is a world first AI cat influencer",
-  url: "https://catmisha.com", // origin must match your domain & subdomain
+  name: "Robotica.gg",
+  description: "Robotica.gg is a platform for creating and battling robots",
+  url: "https://robotica.gg", // origin must match your domain & subdomain
   icons: ["https://assets.reown.com/reown-profile-pic.png"], // TODO: replace with catmisha logo
 };
 
@@ -24,8 +24,8 @@ const metadata = {
 const modal = createAppKit({
   adapters: [wagmiAdapter],
   projectId: REOWN_PROJECT_ID,
-  networks: [base, baseSepolia],
-  defaultNetwork: base,
+  networks: [avalanche],
+  defaultNetwork: avalanche,
   metadata: metadata,
   features: {
     email: true,
