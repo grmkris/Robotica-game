@@ -5,7 +5,7 @@ import { avalanche } from "@reown/appkit/networks";
 import { cookieStorage, createStorage } from "wagmi";
 
 // Get projectId from environment variable
-export const REOWN_PROJECT_ID = "8383ac42481166d54510aff79361fd61";
+export const REOWN_PROJECT_ID = "f79c0744d4d8e18650537565886b52ab";
 
 if (!REOWN_PROJECT_ID) {
   throw new Error("Project ID is not defined");
