@@ -1,5 +1,5 @@
 {
-  "id": "12fbba65-ccc1-4bfa-a22f-06815fbe9729",
+  "id": "ceed57c2-e1f9-42ca-a99f-51fcf2896034",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -692,6 +692,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "winner_id": {
           "name": "winner_id",

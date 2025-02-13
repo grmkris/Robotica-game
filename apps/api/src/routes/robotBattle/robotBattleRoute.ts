@@ -243,6 +243,7 @@ export const getBattleByIdRoute = new OpenAPIHono<{
                   tacticalAnalysis: z.string(),
                   roundNumber: z.number(),
                   description: z.string(),
+                  imageUrl: z.string().nullable(),
                 })
               ),
             }),

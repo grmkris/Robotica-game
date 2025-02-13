@@ -96,6 +96,7 @@ CREATE TABLE "battle_rounds" (
 	"round_number" integer NOT NULL,
 	"description" text NOT NULL,
 	"tactical_analysis" text NOT NULL,
+	"image_url" text,
 	"winner_id" varchar(255),
 	"created_at" timestamp DEFAULT now() NOT NULL
 );

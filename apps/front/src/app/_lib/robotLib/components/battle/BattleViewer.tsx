@@ -26,6 +26,7 @@ interface BattleRound {
   description: string;
   tacticalAnalysis: string;
   winnerId: RobotId | null;
+  imageUrl: string | null;
 }
 
 const ENTRY_FEE = BigInt("1000000000000000"); // 0.001 AVAX
@@ -143,6 +144,16 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
+                {round.imageUrl && (
+                  <div className="overflow-hidden rounded-lg">
+                    <img
+                      src={round.imageUrl}
+                      alt={`Round ${round.roundNumber} battle scene`}
+                      className="w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
                 <div>
                   <h4 className="font-semibold text-cyan-400">
                     Battle Description

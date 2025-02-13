@@ -390,6 +390,7 @@ export declare const createRobotApi: (props: {
                     winnerId: `rob${string}` | null;
                     roundNumber: number;
                     tacticalAnalysis: string;
+                    imageUrl: string | null;
                 }[];
             };
             outputFormat: "json";
