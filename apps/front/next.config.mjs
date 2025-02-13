@@ -22,6 +22,20 @@ const nextConfig = {
       { hostname: "azxhasnfullerxp7.public.blob.vercel-storage.com" },
     ],
   },
+  // Add headers configuration for WalletConnect verification
+  async headers() {
+    return [
+      {
+        source: '/.well-known/walletconnect.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain',
+          },
+        ],
+      },
+    ];
+  },
   // Add the redirects configuration here
   async redirects() {
     return [
