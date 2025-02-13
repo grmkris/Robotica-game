@@ -28,7 +28,7 @@ const modal = createAppKit({
   defaultNetwork: base,
   metadata: metadata,
   features: {
-    email: true, // default to true
+    email: true,
     socials: [
       "google",
       "x",
@@ -38,11 +38,21 @@ const modal = createAppKit({
       "facebook",
       "farcaster",
     ],
-    emailShowWallets: true, // default to true
-    analytics: true, // Optional - defaults to your Cloud configuration
+    emailShowWallets: true,
+    analytics: true,
   },
-  allWallets: "SHOW", // default to SHOW
-  siweConfig: siweConfig, // pass your siweConfig
+  allWallets: "SHOW",
+  siweConfig: siweConfig,
+  themeVariables: {
+    "--w3m-font-family": "var(--font-play)",
+    "--w3m-accent": "#1a9999",
+    "--w3m-color-mix": "#008080",
+    "--w3m-color-mix-strength": 20,
+    "--w3m-border-radius-master": "6px",
+    "--w3m-font-size-master": "14px",
+    "--w3m-z-index": 1000,
+    "--w3m-qr-color": "#008080",
+  },
 });
 
 export function Providers({

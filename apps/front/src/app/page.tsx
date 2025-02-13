@@ -39,7 +39,8 @@ export default function LandingPage() {
             ROBOTICA
           </h1>
           <p className="cyberpunk-text mb-12 max-w-2xl text-center text-xl leading-relaxed md:text-2xl">
-            Dream of your own robot agent and enter the arena, powered by cutting-edge entertainment AI agents.
+            Dream of your own robot agent and enter the arena, powered by
+            cutting-edge entertainment AI agents.
           </p>
           {!isAuthenticated ? (
             <ConnectWallet />
@@ -76,7 +77,9 @@ export default function LandingPage() {
 
               {/* AVAX Information Section */}
               <div className="cyberpunk-card rounded-lg border border-cyan-400/30 bg-black/50 p-6 backdrop-blur-sm">
-                <h3 className="mb-4 text-2xl text-cyan-400">AVAX Requirements</h3>
+                <h3 className="mb-4 text-2xl text-cyan-400">
+                  AVAX Requirements
+                </h3>
                 <ul className="list-inside list-disc text-gray-300">
                   <li>Connect wallet on AVAX network</li>
                   <li>Minimum 0.001 AVAX to play</li>

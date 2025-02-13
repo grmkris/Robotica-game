@@ -26,11 +26,11 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/.well-known/walletconnect.txt',
+        source: "/.well-known/walletconnect.txt",
         headers: [
           {
-            key: 'Content-Type',
-            value: 'text/plain',
+            key: "Content-Type",
+            value: "text/plain",
           },
         ],
       },
