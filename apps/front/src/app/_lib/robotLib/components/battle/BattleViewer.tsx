@@ -63,6 +63,14 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
     }
   };
 
+  const getRobotName = (robotId: RobotId | null) => {
+    if (!robotId || !battle?.robots) return null;
+    return (
+      battle.robots.find((r) => r.id === robotId)?.name ||
+      `Robot #${robotId.split("_")[1]}`
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -91,8 +99,7 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
           </h2>
           <p className="text-zinc-400">
             Status: {battle.status}
-            {battle.winnerId &&
-              ` - Winner: Robot #${battle.winnerId.split("_")[1]}`}
+            {battle.winnerId && ` - Winner: ${getRobotName(battle.winnerId)}`}
           </p>
         </div>
         {battle?.status === "COMPLETED" &&
@@ -139,7 +146,7 @@ export function BattleViewer({ battleId }: { battleId: BattleId }) {
                 <CardTitle>Round {round.roundNumber}</CardTitle>
                 {round.winnerId && (
                   <CardDescription>
-                    Winner: Robot #{round.winnerId.split("_")[1]}
+                    Winner: {getRobotName(round.winnerId)}
                   </CardDescription>
                 )}
               </CardHeader>

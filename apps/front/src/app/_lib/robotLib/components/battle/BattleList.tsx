@@ -82,7 +82,6 @@ export function BattlesList() {
 
   const walletClient = useWalletClient();
   const handleJoinBattle = async () => {
-    debugger;
     if (!selectedRobotId || !selectedBattleId || !address || !selectedGameId)
       return;
 

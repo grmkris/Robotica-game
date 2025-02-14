@@ -260,6 +260,19 @@ const processRound = async (props: {
 }) => {
   const { battleId, roundNumber, robotStates, db, logger } = props;
 
+  // Get robot names from database for narrative purposes
+  const battleRobots = await db.query.BattleRobotsTable.findMany({
+    where: eq(BattleRobotsTable.battleId, battleId),
+    with: {
+      robot: true,
+    },
+  });
+
+  // Create a mapping of robot IDs to their names
+  const robotNames = new Map<string, string>(
+    battleRobots.map((br) => [br.robotId, br.robot.name])
+  );
+
   logger.info({
     msg: "Processing battle round",
     battleId,
@@ -296,7 +309,10 @@ const processRound = async (props: {
     .wrap(async () => {
       const input = {
         roundNumber,
-        robotStates: Array.from(robotStates.values()),
+        robotStates: Array.from(robotStates.values()).map((state) => ({
+          ...state,
+          name: robotNames.get(state.robotId) || state.robotId, // Add name for narrative
+        })),
       };
 
       logger.info({
@@ -310,7 +326,7 @@ const processRound = async (props: {
         const result = await executeStepStructured<typeof BattleRoundSchema>({
           stepName: "battle_round",
           input: JSON.stringify(input),
-          system: createBattlePrompt(roundNumber, robotStates),
+          system: createBattlePrompt(roundNumber, robotStates, robotNames),
           logger,
           providerConfig: {
             apikey: env.GOOGLE_GEMINI_API_KEY,
@@ -418,7 +434,8 @@ const processRound = async (props: {
 
 const createBattlePrompt = (
   roundNumber: number,
-  robotStates: Map<string, RobotState>
+  robotStates: Map<string, RobotState>,
+  robotNames: Map<string, string>
 ) => {
   const aliveRobots = Array.from(robotStates.values()).filter((r) => r.isAlive);
 
@@ -429,7 +446,7 @@ Current robot states:
 ${Array.from(robotStates.values())
   .map(
     (robot) => `
-- Robot ${robot.robotId}:
+- ${robotNames.get(robot.robotId) || robot.robotId}:
   Health: ${robot.currentHealth}
   Status: ${robot.status.join(", ") || "Normal"}
   ${robot.isAlive ? "ACTIVE" : "ELIMINATED"}
@@ -437,28 +454,28 @@ ${Array.from(robotStates.values())
   )
   .join("\n")}
 
-Your response must follow this exact JSON structure:
+Your response must follow this exact JSON structure, but use robot names in narrative and tactical analysis:
 {
   "roundNumber": ${roundNumber},
-  "narrative": "A brief description of the entire round",
+  "narrative": "A brief description of the entire round using robot names",
   "actions": [
     {
       "attackerId": "ID of the attacking robot",
       "defenderId": "ID of the defending robot",
       "damage": (number between 1-30),
-      "description": "Brief description of this specific attack"
+      "description": "Brief description of this specific attack using robot names"
     }
   ],
-  "tacticalAnalysis": "A brief analysis of the round's outcome",
+  "tacticalAnalysis": "A brief analysis of the round's outcome using robot names",
   "imageUrl": "The URL of the generated image for this round, if any",
-  "winnerId": null  // Set to robot ID only if this round had a decisive winner, otherwise null
+  "winnerId": null  // Use robot ID here
 }
 
 Generate an exciting battle round with clear outcomes. For each attack:
-1. Choose which robot attacks which other robot
-2. Determine a realistic damage amount (1-30)
+1. Use robot names in descriptions and analysis
+2. Keep using robot IDs in the action structure
 3. Write a brief but vivid description of what happened
 
 Keep the narrative exciting but focused on the key actions.
-Note: Only set winnerId to a robot ID if one robot clearly dominated the round, otherwise leave it as null.`;
+Note: Use robot names in narrative and analysis, but keep using IDs for the technical fields (attackerId, defenderId, winnerId).`;
 };

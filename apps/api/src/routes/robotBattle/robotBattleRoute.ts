@@ -236,6 +236,12 @@ export const getBattleByIdRoute = new OpenAPIHono<{
               completedAt: z.coerce.date().nullable(),
               createdAt: z.coerce.date(),
               createdBy: UserId,
+              robots: z.array(
+                z.object({
+                  id: RobotId,
+                  name: z.string(),
+                })
+              ),
               rounds: z.array(
                 z.object({
                   id: RoundId,
@@ -260,6 +266,16 @@ export const getBattleByIdRoute = new OpenAPIHono<{
       where: eq(BattleTable.id, battleId),
       with: {
         rounds: true,
+        battleRobots: {
+          with: {
+            robot: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -267,7 +283,13 @@ export const getBattleByIdRoute = new OpenAPIHono<{
       throw new HTTPException(404, { message: "Battle not found" });
     }
 
-    return c.json(battle);
+    return c.json({
+      ...battle,
+      robots: battle.battleRobots.map((br) => ({
+        id: br.robot.id,
+        name: br.robot.name,
+      })),
+    });
   }
 );
 
