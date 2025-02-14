@@ -6,8 +6,8 @@ import {
   Inter,
   JetBrains_Mono,
   Orbitron,
-  Rajdhani,
   Play,
+  Rajdhani,
 } from "next/font/google";
 import type { ReactNode } from "react";
 import { Toaster } from "sonner";

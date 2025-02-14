@@ -1,10 +1,8 @@
 "use client";
 
-import { ConnectWallet } from "./ConnectWallet";
-import Link from "next/link";
 import { useAuth } from "@/app/auth/useAuth";
+import Link from "next/link";
 import { Button } from "./ui/button";
-
 interface HeaderProps {
   onEnterArena?: () => void;
 }
@@ -18,12 +16,10 @@ export function Header({ onEnterArena }: HeaderProps) {
         ROBOTICA
       </Link>
       <div className="flex items-center gap-4">
-        {isAuthenticated ? (
+        {isAuthenticated && (
           <Button onClick={onEnterArena} className="cyberpunk-button">
             Enter Arena
           </Button>
-        ) : (
-          <ConnectWallet />
         )}
       </div>
     </header>
