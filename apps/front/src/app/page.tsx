@@ -49,10 +49,10 @@ export default function LandingPage() {
               Enter Arena
             </Button>
           )}
-          <div className="absolute bottom-10 animate-bounce">
+          <div className="absolute bottom-10">
             <p className="text-sm text-cyan-400">Scroll to learn more</p>
             <div className="mx-auto mt-2 h-10 w-6 rounded-full border-2 border-cyan-400">
-              <div className="mx-auto mt-2 h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
+              <div className="scroll-dot mx-auto mt-2 h-2 w-2 rounded-full bg-cyan-400" />
             </div>
           </div>
         </div>
