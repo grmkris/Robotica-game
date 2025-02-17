@@ -28,7 +28,7 @@ import {
   type UserId,
 } from "robot-sdk";
 import { toast } from "sonner";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount } from "wagmi";
 import { enterGame } from "../../robotContract";
 import { BattleCard } from "./BattleCard";
 
@@ -67,7 +67,6 @@ export function BattlesList() {
   );
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const generateSignature = useGenerateGameSignature();
 
   const {
     data: battles,
@@ -80,7 +79,6 @@ export function BattlesList() {
 
   const joinBattle = useJoinBattle();
 
-  const walletClient = useWalletClient();
   const handleJoinBattle = async () => {
     if (!selectedRobotId || !selectedBattleId || !address || !selectedGameId)
       return;
@@ -89,31 +87,10 @@ export function BattlesList() {
       setIsProcessing(true);
 
       // 1. Join battle in our backend
-      console.log("Joining battle with:", {
-        battleId: selectedBattleId,
-        gameId: selectedGameId,
-        robotId: selectedRobotId,
-      });
       const battleData = await joinBattle.mutateAsync({
         battleId: selectedBattleId,
         gameId: selectedGameId,
         robotId: selectedRobotId,
-      });
-
-      // 2. Get signature from backend
-      const signatureData = await generateSignature.mutateAsync({
-        gameId: battleData.gameId,
-        userAddress: address,
-      });
-
-      // 3. Send transaction using user's wallet and wait for confirmation
-      if (!walletClient.data) {
-        throw new Error("Wallet client not found");
-      }
-      await enterGame({
-        gameId: BigInt(battleData.gameId),
-        signature: signatureData.signature,
-        walletClient: walletClient.data,
       });
 
       // 4. Navigate to battle page

@@ -15,7 +15,7 @@ import type { BattleId, RobotId } from "robot-sdk";
 import { IsometricLoader } from "../IsometricLoader";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { Button } from "@/components/ui/button";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount } from "wagmi";
 import { toast } from "sonner";
 import { claimPrize } from "../../robotContract";
 
@@ -35,28 +35,16 @@ const PRIZE_AMOUNT = ENTRY_FEE * 2n; // 0.002 AVAX
 export function BattleViewer({ battleId }: { battleId: BattleId }) {
   const { data: battle, isLoading } = useGetBattleById(battleId);
   const { address } = useAccount();
-  const { data: walletClient } = useWalletClient();
   const generateClaimSignature = useGenerateClaimSignature();
   const { data: userRobots } = useGetUserRobots();
 
   const handleClaim = async () => {
-    if (!battle?.winnerId || !address || !walletClient) return;
+    if (!battle?.winnerId || !address) return;
 
     try {
-      const signatureData = await generateClaimSignature.mutateAsync({
-        gameId: BigInt(battle.gameId),
-        userAddress: address,
-        amount: PRIZE_AMOUNT,
-      });
-
-      await claimPrize({
-        gameId: BigInt(battle.gameId),
-        amount: PRIZE_AMOUNT,
-        signature: signatureData.signature,
-        walletClient,
-      });
-
-      toast.success("Prize claimed successfully!");
+      // Simulate a delay to mimic transaction time
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      toast.success("Prize claimed successfully! (Test mode)");
     } catch (error) {
       console.error("Failed to claim prize:", error);
       toast.error("Failed to claim prize");

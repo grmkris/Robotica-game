@@ -1,6 +1,5 @@
 import {
   useCreateBattle,
-  useGenerateGameSignature,
   useGetUserRobots,
 } from "@/app/_lib/robotLib/robotHooks";
 import { Button } from "@/components/ui/button";
@@ -22,8 +21,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RobotId } from "robot-sdk";
 import { toast } from "sonner";
-import { useAccount, useWalletClient } from "wagmi";
-import { enterGame } from "../../robotContract";
+import { useAccount } from "wagmi";
 
 export function CreateBattleRoom() {
   const router = useRouter();
@@ -32,8 +30,7 @@ export function CreateBattleRoom() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { data: userRobots } = useGetUserRobots();
   const createBattleMutation = useCreateBattle();
-  const generateSignature = useGenerateGameSignature();
-  const walletClient = useWalletClient();
+
   const handleCreateBattle = async () => {
     if (!selectedRobotId || !address) return;
 
@@ -43,22 +40,6 @@ export function CreateBattleRoom() {
       // 1. Create battle in our backend
       const battleData = await createBattleMutation.mutateAsync({
         robot1Id: selectedRobotId,
-      });
-
-      // 2. Get signature from backend
-      const signatureData = await generateSignature.mutateAsync({
-        gameId: battleData.gameId,
-        userAddress: address,
-      });
-
-      if (!walletClient.data) {
-        throw new Error("Wallet client not found");
-      }
-      // 3. Send transaction using user's wallet and wait for confirmation
-      await enterGame({
-        gameId: BigInt(battleData.gameId),
-        signature: signatureData.signature,
-        walletClient: walletClient.data,
       });
 
       // 4. Navigate to battle page
@@ -76,8 +57,7 @@ export function CreateBattleRoom() {
     !selectedRobotId ||
     !address ||
     isProcessing ||
-    createBattleMutation.isPending ||
-    generateSignature.isPending;
+    createBattleMutation.isPending;
 
   return (
     <Dialog>
@@ -108,11 +88,7 @@ export function CreateBattleRoom() {
             disabled={isButtonDisabled}
             onClick={handleCreateBattle}
           >
-            {isProcessing
-              ? "Processing Transaction..."
-              : createBattleMutation.isPending || generateSignature.isPending
-                ? "Creating..."
-                : "Create Battle"}
+            {isProcessing ? "Processing Transaction..." : "Create Battle"}
           </Button>
         </div>
       </DialogContent>
