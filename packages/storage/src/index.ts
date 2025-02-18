@@ -1,21 +1,21 @@
-import { Client } from 'minio';
-import { customAlphabet } from 'nanoid';
-import { z } from 'zod';
+import { Client } from "minio";
+import { customAlphabet } from "nanoid";
+import { z } from "zod";
 
 /**
  * Storage key prefixes for different types of content.
  * These prefixes help organize and identify different types of stored objects.
  */
 export const keyPrefixes = {
-  /** Prefix for cat image files */
-  catImage: 'cat_img',
+  /** Prefix for robot battle images */
+  robotBattle: "robot_battle",
   /** Prefix for user uploaded content */
-  userUpload: 'usr_upl',
+  userUpload: "usr_upl",
   /** Prefix for system backup files */
-  systemBackup: 'sys_bak',
+  systemBackup: "sys_bak",
 } as const;
 
-type KeyPrefix = typeof keyPrefixes[keyof typeof keyPrefixes];
+type KeyPrefix = (typeof keyPrefixes)[keyof typeof keyPrefixes];
 type StorageKey<T extends KeyPrefix> = `${T}${string}`;
 
 /**
@@ -29,8 +29,8 @@ const createKeySchema = <T extends KeyPrefix>(prefix: T) =>
   );
 
 // Export key types and their validators
-export const CatImageKey = createKeySchema(keyPrefixes.catImage);
-export type CatImageKey = z.infer<typeof CatImageKey>;
+export const RobotBattleKey = createKeySchema(keyPrefixes.robotBattle);
+export type RobotBattleKey = z.infer<typeof RobotBattleKey>;
 export const UserUploadKey = createKeySchema(keyPrefixes.userUpload);
 export type UserUploadKey = z.infer<typeof UserUploadKey>;
 export const SystemBackupKey = createKeySchema(keyPrefixes.systemBackup);
@@ -54,14 +54,14 @@ export interface GenerateKeyOptions {
 export function generateStorageKey<T extends keyof typeof keyPrefixes>(
   prefix: T,
   { length = 12, separator = "_", extension }: GenerateKeyOptions = {}
-): StorageKey<typeof keyPrefixes[T]> {
+): StorageKey<(typeof keyPrefixes)[T]> {
   const id = customAlphabet(
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
     length
   )();
 
-  const key = `${keyPrefixes[prefix]}${separator}${id}${extension ? `.${extension}` : ''}`;
-  return key as StorageKey<typeof keyPrefixes[T]>;
+  const key = `${keyPrefixes[prefix]}${separator}${id}${extension ? `.${extension}` : ""}`;
+  return key as StorageKey<(typeof keyPrefixes)[T]>;
 }
 
 export interface StorageCredentials {
@@ -93,7 +93,7 @@ export const createStorageClient = (credentials: StorageCredentials) => {
     useSSL: credentials.useSSL ?? true,
     accessKey: credentials.accessKey,
     secretKey: credentials.secretKey,
-    region: credentials.region
+    region: credentials.region,
   });
 
   /**
@@ -120,18 +120,14 @@ export const createStorageClient = (credentials: StorageCredentials) => {
    * @throws If upload fails
    */
   const upload = async (
-    key: CatImageKey | UserUploadKey,
+    key: RobotBattleKey | UserUploadKey,
     data: Buffer,
     contentType?: string
   ) => {
     try {
-      await client.putObject(
-        credentials.bucket,
-        key,
-        data,
-        undefined,
-        { 'Content-Type': contentType }
-      );
+      await client.putObject(credentials.bucket, key, data, undefined, {
+        "Content-Type": contentType,
+      });
       return key;
     } catch (error) {
       throw new Error(`Failed to upload object: ${error}`);
@@ -146,14 +142,14 @@ export const createStorageClient = (credentials: StorageCredentials) => {
    * @returns Pre-signed upload URL
    */
   const getUploadUrl = async (
-    key: CatImageKey | UserUploadKey,
-    expirySeconds = 3600,
+    key: RobotBattleKey | UserUploadKey,
+    expirySeconds = 3600
   ) => {
     try {
       return await client.presignedPutObject(
         credentials.bucket,
         key,
-        expirySeconds,
+        expirySeconds
       );
     } catch (error) {
       throw new Error(`Failed to generate upload URL: ${error}`);
@@ -167,7 +163,7 @@ export const createStorageClient = (credentials: StorageCredentials) => {
    * @returns Pre-signed download URL
    */
   const getDownloadUrl = async (
-    key: CatImageKey | UserUploadKey,
+    key: RobotBattleKey | UserUploadKey,
     expirySeconds = 3600
   ) => {
     try {
@@ -186,7 +182,7 @@ export const createStorageClient = (credentials: StorageCredentials) => {
    * @param key - Storage key of the object to remove
    * @throws If removal fails
    */
-  const remove = async (key: CatImageKey | UserUploadKey) => {
+  const remove = async (key: RobotBattleKey | UserUploadKey) => {
     try {
       await client.removeObject(credentials.bucket, key);
     } catch (error) {
@@ -205,12 +201,14 @@ export const createStorageClient = (credentials: StorageCredentials) => {
     const stream = client.listObjects(credentials.bucket, prefix);
 
     return new Promise<string[]>((resolve, reject) => {
-      stream.on('data', obj => {
+      stream.on("data", (obj) => {
         if (!obj.name) return;
         objects.push(obj.name);
       });
-      stream.on('end', () => resolve(objects));
-      stream.on('error', err => reject(new Error(`Failed to list objects: ${err}`)));
+      stream.on("end", () => resolve(objects));
+      stream.on("error", (err) =>
+        reject(new Error(`Failed to list objects: ${err}`))
+      );
     });
   };
 
@@ -221,8 +219,22 @@ export const createStorageClient = (credentials: StorageCredentials) => {
     getDownloadUrl,
     remove,
     list,
-    generateKey: generateStorageKey
+    generateKey: generateStorageKey,
   };
 };
 
 export type CatStorageClient = ReturnType<typeof createStorageClient>;
+
+// Create and export the default storage instance
+export const storage = createStorageClient({
+  endPoint: process.env.ENDPOINT!,
+  accessKey: process.env.ACCESS_KEY!,
+  secretKey: process.env.SECRET_KEY!,
+  bucket: process.env.BUCKET!,
+});
+
+// Initialize the storage on import
+storage.initialize().catch((error) => {
+  console.error("Failed to initialize storage:", error);
+  throw error;
+});

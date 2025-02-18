@@ -18,6 +18,7 @@ import type { BattleId } from "robot-sdk";
 import { generateId, RobotId } from "robot-sdk";
 import { z } from "zod";
 import { createMediaGenClient } from "cat-media-gen";
+import { storage } from "cat-storage";
 /**
  * Battle requirements:
  * - Battle can have 2 or more robots
@@ -61,6 +62,9 @@ const BattleRoundSchema = z.object({
 type RobotState = z.infer<typeof RobotStateSchema>;
 
 const MAX_ROUNDS = 10; // Prevent infinite battles
+
+// Add a default robot image URL
+const DEFAULT_ROBOT_IMAGE = "https://your-default-robot-image.png";
 
 export const _resolveBattle = async (props: {
   battleId: BattleId;
@@ -260,176 +264,245 @@ const processRound = async (props: {
 }) => {
   const { battleId, roundNumber, robotStates, db, logger } = props;
 
-  // Get robot names from database for narrative purposes
-  const battleRobots = await db.query.BattleRobotsTable.findMany({
-    where: eq(BattleRobotsTable.battleId, battleId),
-    with: {
-      robot: true,
-    },
-  });
-
-  // Create a mapping of robot IDs to their names
-  const robotNames = new Map<string, string>(
-    battleRobots.map((br) => [br.robotId, br.robot.name])
-  );
-
-  logger.info({
-    msg: "Processing battle round",
-    battleId,
-    roundNumber,
-    robotStates: Array.from(robotStates.entries()).map(([id, state]) => ({
-      id,
-      health: state.currentHealth,
-      isAlive: state.isAlive,
-      status: state.status,
-    })),
-  });
-
-  // Validate robot states before proceeding
-  if (robotStates.size !== 2) {
-    throw new Error(`Invalid number of robot states: ${robotStates.size}`);
-  }
-
-  const aliveRobots = Array.from(robotStates.values()).filter((r) => r.isAlive);
-  if (aliveRobots.length < 2) {
-    throw new Error(`Not enough active robots: ${aliveRobots.length}`);
-  }
-
-  // Simulate the round
-  const roundResult = await literalClient
-    .step({
-      name: `Simulate Round ${roundNumber}`,
-      type: "llm",
-      metadata: {
-        battleId,
-        roundNumber,
-        operation: "simulate_round",
-      },
-    })
-    .wrap(async () => {
-      const input = {
-        roundNumber,
-        robotStates: Array.from(robotStates.values()).map((state) => ({
-          ...state,
-          name: robotNames.get(state.robotId) || state.robotId, // Add name for narrative
-        })),
-      };
-
-      logger.info({
-        msg: "Simulating round with input",
-        input,
-        battleId,
-        roundNumber,
+  try {
+    // Get the previous round's image if it exists
+    let previousRoundImage: string | undefined;
+    if (roundNumber > 1) {
+      const previousRound = await db.query.BattleRoundsTable.findFirst({
+        where: eq(BattleRoundsTable.roundNumber, roundNumber - 1),
+        columns: {
+          imageUrl: true,
+        },
       });
+      previousRoundImage = previousRound?.imageUrl ?? undefined;
+    }
 
-      try {
-        const result = await executeStepStructured<typeof BattleRoundSchema>({
-          stepName: "battle_round",
-          input: JSON.stringify(input),
-          system: createBattlePrompt(roundNumber, robotStates, robotNames),
-          logger,
-          providerConfig: {
-            apikey: env.GOOGLE_GEMINI_API_KEY,
-            modelId: "gemini-2.0-flash-exp",
-            provider: "google",
-          },
-          literalClient,
-          stepId: `round_${roundNumber}`,
-          output: {
-            outputSchema: BattleRoundSchema,
-            schemaDescription: "The battle round results",
-            schemaName: "BattleRound",
-            temperature: 0.7,
-          },
-        });
+    // Get robot names from database for narrative purposes
+    const battleRobots = await db.query.BattleRobotsTable.findMany({
+      where: eq(BattleRobotsTable.battleId, battleId),
+      with: {
+        robot: true,
+      },
+    });
 
-        logger.info({
-          msg: "Raw LLM response",
-          result,
+    // Create a mapping of robot IDs to their names
+    const robotNames = new Map<string, string>(
+      battleRobots.map((br) => [br.robotId, br.robot.name])
+    );
+
+    logger.info({
+      msg: "Processing battle round",
+      battleId,
+      roundNumber,
+      robotStates: Array.from(robotStates.entries()).map(([id, state]) => ({
+        id,
+        health: state.currentHealth,
+        isAlive: state.isAlive,
+        status: state.status,
+      })),
+    });
+
+    // Validate robot states before proceeding
+    if (robotStates.size !== 2) {
+      throw new Error(`Invalid number of robot states: ${robotStates.size}`);
+    }
+
+    const aliveRobots = Array.from(robotStates.values()).filter(
+      (r) => r.isAlive
+    );
+    if (aliveRobots.length < 2) {
+      throw new Error(`Not enough active robots: ${aliveRobots.length}`);
+    }
+
+    // Simulate the round
+    const roundResult = await literalClient
+      .step({
+        name: `Simulate Round ${roundNumber}`,
+        type: "llm",
+        metadata: {
           battleId,
           roundNumber,
-        });
+          operation: "simulate_round",
+        },
+      })
+      .wrap(async () => {
+        const input = {
+          roundNumber,
+          robotStates: Array.from(robotStates.values()).map((state) => ({
+            ...state,
+            name: robotNames.get(state.robotId) || state.robotId, // Add name for narrative
+          })),
+        };
 
-        return result;
-      } catch (error) {
-        logger.error({
-          msg: "Failed to process round",
-          error,
+        logger.info({
+          msg: "Simulating round with input",
           input,
           battleId,
           roundNumber,
-          errorDetails:
-            error instanceof Error
-              ? {
-                  message: error.message,
-                  stack: error.stack,
-                }
-              : undefined,
         });
-        throw error;
-      }
-    });
 
-  // Apply damage and update states
-  await literalClient
-    .step({
-      name: "Apply Round Results",
-      type: "run",
-      input: roundResult,
-      metadata: {
-        operation: "apply_damage",
-      },
-    })
-    .wrap(async () => {
-      // Apply damages to robot states
-      for (const action of roundResult.actions) {
-        const state = robotStates.get(action.defenderId);
-        if (state?.isAlive) {
-          state.currentHealth -= action.damage;
-          state.status.push(action.description);
-          if (state.currentHealth <= 0) {
-            state.isAlive = false;
-            state.status.push("ELIMINATED");
+        try {
+          const result = await executeStepStructured<typeof BattleRoundSchema>({
+            stepName: "battle_round",
+            input: JSON.stringify(input),
+            system: createBattlePrompt(roundNumber, robotStates, robotNames),
+            logger,
+            providerConfig: {
+              apikey: env.GOOGLE_GEMINI_API_KEY,
+              modelId: "gemini-2.0-flash-exp",
+              provider: "google",
+            },
+            literalClient,
+            stepId: `round_${roundNumber}`,
+            output: {
+              outputSchema: BattleRoundSchema,
+              schemaDescription: "The battle round results",
+              schemaName: "BattleRound",
+              temperature: 0.7,
+            },
+          });
+
+          logger.info({
+            msg: "Raw LLM response",
+            result,
+            battleId,
+            roundNumber,
+          });
+
+          return result;
+        } catch (error) {
+          logger.error({
+            msg: "Failed to process round",
+            error,
+            input,
+            battleId,
+            roundNumber,
+            errorDetails:
+              error instanceof Error
+                ? {
+                    message: error.message,
+                    stack: error.stack,
+                  }
+                : undefined,
+          });
+          throw error;
+        }
+      });
+
+    // Apply damage and update states
+    await literalClient
+      .step({
+        name: "Apply Round Results",
+        type: "run",
+        input: roundResult,
+        metadata: {
+          operation: "apply_damage",
+        },
+      })
+      .wrap(async () => {
+        // Apply damages to robot states
+        for (const action of roundResult.actions) {
+          const state = robotStates.get(action.defenderId);
+          if (state?.isAlive) {
+            state.currentHealth -= action.damage;
+            state.status.push(action.description);
+            if (state.currentHealth <= 0) {
+              state.isAlive = false;
+              state.status.push("ELIMINATED");
+            }
           }
         }
-      }
 
-      // After simulating the round and before saving to database, generate the image
-      let roundImageUrl: string | undefined;
-      try {
-        const imagePrompt = `Epic robot battle scene: ${roundResult.narrative}. Cinematic lighting, dramatic angle, detailed mechanical parts, high quality render, 8k resolution, unreal engine style`;
+        // Generate image based on round number
+        let roundImageUrl: string | undefined;
+        try {
+          // Base prompt similar to robot creation
+          const baseStyle =
+            "Video game style, detailed mechanical parts, professional lighting, high quality render, 8k resolution, unreal engine style";
 
-        logger.info("Generating round image with prompt:", imagePrompt);
+          // Include original robot descriptions
+          const robot1Description = battleRobots[0].robot.description;
+          const robot2Description = battleRobots[1].robot.description;
+          const robotDescriptions = `First robot: ${robot1Description}. Second robot: ${robot2Description}.`;
 
-        const result = await mediaGen.generateImages({
-          prompt: imagePrompt,
-          imageSize: "square_hd",
-          numImages: 1,
-        });
+          // First round needs a more specific prompt to transform the side-by-side robots into a battle scene
+          const imagePrompt =
+            roundNumber === 1
+              ? `Epic robot battle scene between two robots: ${robotDescriptions} The robots are facing each other in combat stance. The image you are given is a joined image of the two robots, transform it into a battle scene. ${roundResult.narrative}. ${baseStyle}`
+              : `Epic robot battle scene continuing from the previous image: ${robotDescriptions}. ${roundResult.narrative}. Cinematic lighting, dramatic angle, ${baseStyle}`;
 
-        if (result[0]?.imageUrl) {
-          roundImageUrl = result[0].imageUrl;
-          logger.info("Generated round image:", roundImageUrl);
+          logger.info("Generating round image with prompt:", imagePrompt);
+
+          if (roundNumber === 1) {
+            const result = await mediaGen.generateImageToImage(
+              storage,
+              {
+                robot1Url:
+                  battleRobots[0].robot.imageUrl ?? DEFAULT_ROBOT_IMAGE,
+                robot2Url:
+                  battleRobots[1].robot.imageUrl ?? DEFAULT_ROBOT_IMAGE,
+                prompt: imagePrompt,
+                imageSize: "square_hd",
+                initImageStrength: 0.8,
+              },
+              logger
+            );
+            roundImageUrl = result[0]?.imageUrl;
+          } else if (previousRoundImage) {
+            // Subsequent rounds: Use previous round's image
+            const result = await mediaGen.generateImageFromImage(
+              storage,
+              {
+                sourceImageUrl: previousRoundImage,
+                prompt: imagePrompt,
+                imageSize: "square_hd",
+                initImageStrength: Math.min(
+                  0.7 + (roundNumber - 1) * 0.05,
+                  0.9
+                ),
+              },
+              logger
+            );
+            roundImageUrl = result[0]?.imageUrl;
+          }
+
+          if (roundImageUrl) {
+            logger.info("Generated round image:", roundImageUrl);
+          }
+        } catch (error) {
+          logger.error("Failed to generate round image:", error);
         }
-      } catch (error) {
-        logger.error("Failed to generate round image:", error);
-        // Continue without image if generation fails
-      }
 
-      // Save round results to database with the image
-      await db.insert(BattleRoundsTable).values({
-        id: generateId("round"),
-        battleId,
-        roundNumber,
-        description: roundResult.narrative,
-        tacticalAnalysis: roundResult.tacticalAnalysis,
-        winnerId: roundResult.winnerId
-          ? RobotId.parse(roundResult.winnerId)
-          : null,
-        imageUrl: roundImageUrl, // Add the generated image URL
-        createdAt: new Date(),
+        // Save round results to database with the image
+        await db.insert(BattleRoundsTable).values({
+          id: generateId("round"),
+          battleId,
+          roundNumber,
+          description: roundResult.narrative,
+          tacticalAnalysis: roundResult.tacticalAnalysis,
+          winnerId: roundResult.winnerId
+            ? RobotId.parse(roundResult.winnerId)
+            : null,
+          imageUrl: roundImageUrl, // Add the generated image URL
+          createdAt: new Date(),
+        });
       });
+  } catch (error) {
+    logger.error({
+      msg: "Failed to process round",
+      error,
+      battleId,
+      roundNumber,
+      errorDetails:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+            }
+          : undefined,
     });
+    throw error;
+  }
 };
 
 const createBattlePrompt = (

@@ -10,6 +10,8 @@
     "@fal-ai/client": "^1.2.3",
     "cat-logger": "workspace:*",
     "cat-storage": "workspace:*",
+    "join-images": "^1.1.5",
+    "sharp": "^0.33.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
