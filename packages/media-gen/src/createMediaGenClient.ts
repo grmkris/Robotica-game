@@ -47,6 +47,10 @@ export interface ImageGenerationResult {
 export interface ImageToImageOptions extends CatImageGenerationOptions {
   robot1Url: string | null;
   robot2Url: string | null;
+  robot1Description?: string;
+  robot1VisualDescription?: string;
+  robot2Description?: string;
+  robot2VisualDescription?: string;
   initImageStrength?: number;
 }
 
@@ -120,23 +124,6 @@ export const createMediaGenClient = (credentials: MediaGenCredentials) => {
     };
   };
 
-  async function createMask(
-    width: number,
-    height: number,
-    outputPath: string
-  ): Promise<void> {
-    await sharp({
-      create: {
-        width,
-        height,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 1 },
-      },
-    })
-      .png()
-      .toFile(outputPath);
-  }
-
   const generateImageToImage = async (
     storage: ReturnType<typeof createStorageClient>,
     options: ImageToImageOptions,
@@ -154,60 +141,56 @@ export const createMediaGenClient = (credentials: MediaGenCredentials) => {
     const robot1Path = join(tempDir, `robot1_${Date.now()}.png`);
     const robot2Path = join(tempDir, `robot2_${Date.now()}.png`);
     const combinedPath = join(tempDir, `combined_${Date.now()}.png`);
-    const maskPath = join(tempDir, `mask_${Date.now()}.png`);
 
     try {
       // Download and resize both robot images
       await Promise.all([
-        downloadAndResizeImage(options.robot1Url!, robot1Path),
-        downloadAndResizeImage(options.robot2Url!, robot2Path),
+        downloadAndResizeImage(options.robot1Url!, robot1Path, 768),
+        downloadAndResizeImage(options.robot2Url!, robot2Path, 768),
       ]);
 
-      // Join images horizontally
+      // Join images with smaller gap and better positioning
       await joinImages([{ src: robot1Path }, { src: robot2Path }], {
         direction: "horizontal",
         align: "center",
-        offset: 20,
+        offset: 10,
       }).then((img) => img.toFile(combinedPath));
 
-      // Get dimensions of combined image
-      const metadata = await sharp(combinedPath).metadata();
-      if (!metadata.width || !metadata.height) {
-        throw new Error("Failed to get image dimensions");
-      }
+      const imageBuffer = await fs.readFile(combinedPath);
+      const imageKey = storage.generateKey("robotBattle", {
+        extension: "png",
+      });
+      await storage.upload(imageKey, imageBuffer, "image/png");
+      const imageUrl = await storage.getDownloadUrl(imageKey);
 
-      // Create white mask of the same size
-      await createMask(metadata.width, metadata.height, maskPath);
-
-      // Upload both images
-      const [imageUrl, maskUrl] = await Promise.all([
-        (async () => {
-          const imageBuffer = await fs.readFile(combinedPath);
-          const imageKey = storage.generateKey("robotBattle", {
-            extension: "png",
-          });
-          await storage.upload(imageKey, imageBuffer, "image/png");
-          return storage.getDownloadUrl(imageKey);
-        })(),
-        (async () => {
-          const maskBuffer = await fs.readFile(maskPath);
-          const maskKey = storage.generateKey("robotBattle", {
-            extension: "png",
-          });
-          await storage.upload(maskKey, maskBuffer, "image/png");
-          return storage.getDownloadUrl(maskKey);
-        })(),
-      ]);
-
-      // Use FLUX.1 Fill model
-      console.log(options.prompt, "prompt for first round");
-      const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
+      // Enhanced prompt for better robot preservation and scene creation
+      const result = await fal.subscribe("fal-ai/flux-lora/image-to-image", {
         input: {
-          prompt: options.prompt,
+          prompt: `Epic robot battle scene. 
+Left robot (${options.robot1VisualDescription || options.robot1Description}) and 
+right robot (${options.robot2VisualDescription || options.robot2Description}) 
+facing each other in a tense combat stance.
+
+Important details to preserve:
+- Maintain exact colors, materials, and distinctive features of both robots
+- Keep all unique design elements, weapons, and armor intact
+- Preserve the specific head designs and eye colors
+- Keep the original proportions and scale of each robot
+
+Scene composition:
+- Dynamic battle arena environment
+- Dramatic lighting highlighting each robot's unique features
+- Subtle environmental effects (shadows, reflections, energy effects)
+- Clear separation between robots while maintaining tension
+- Professional studio-quality rendering, 8k resolution
+- Unreal Engine 5 quality
+
+The robots should look exactly like their original designs but positioned in an epic battle scene.`,
           image_url: imageUrl,
-          mask_url: maskUrl,
-          num_images: options.numImages ?? 1,
-          safety_tolerance: "5",
+          strength: 0.65,
+          num_inference_steps: 40,
+          guidance_scale: 12,
+          num_images: 1,
           output_format: "png",
         },
       });
@@ -219,7 +202,17 @@ export const createMediaGenClient = (credentials: MediaGenCredentials) => {
         })
       );
     } catch (error) {
-      logger?.error("Failed to generate battle image:", error);
+      logger?.error({
+        msg: "Failed to generate battle image",
+        error,
+        errorDetails:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+              }
+            : undefined,
+      });
       throw error;
     } finally {
       // Clean up temp files
@@ -227,48 +220,55 @@ export const createMediaGenClient = (credentials: MediaGenCredentials) => {
         fs.unlink(robot1Path).catch(() => {}),
         fs.unlink(robot2Path).catch(() => {}),
         fs.unlink(combinedPath).catch(() => {}),
-        fs.unlink(maskPath).catch(() => {}),
       ]);
     }
   };
 
   const generateImageFromImage = async (
-    storage: ReturnType<typeof createStorageClient>,
     options: ImageFromImageOptions,
     logger?: Logger
   ): Promise<GeneratedImage[]> => {
-    const tempDir = tmpdir();
-    const maskPath = join(tempDir, `mask_${Date.now()}.png`);
-
     try {
-      // Get source image dimensions
-      const response = await fetch(options.sourceImageUrl);
-      const buffer = Buffer.from(await response.arrayBuffer());
-      const metadata = await sharp(buffer).metadata();
-      if (!metadata.width || !metadata.height) {
-        throw new Error("Failed to get image dimensions");
-      }
-
-      // Create white mask
-      await createMask(metadata.width, metadata.height, maskPath);
-
-      // Upload mask
-      const maskBuffer = await fs.readFile(maskPath);
-      const maskKey = storage.generateKey("robotBattle", { extension: "png" });
-      await storage.upload(maskKey, maskBuffer, "image/png");
-      const maskUrl = await storage.getDownloadUrl(maskKey);
-
-      console.log(options.prompt, "prompt for second round");
-      const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
+      // Use the same model as the first round for consistency
+      const result = await fal.subscribe("fal-ai/flux-lora/image-to-image", {
         input: {
-          prompt: options.prompt,
+          prompt: `Continue the epic robot battle scene.
+${options.prompt}
+
+Important details to preserve:
+- Maintain the exact appearance and design of both robots
+- Keep all unique features, weapons, and armor details intact
+- Preserve the specific colors and materials of each robot
+- Maintain the scale and proportions of both robots
+
+Scene composition:
+- Dynamic battle environment with energy effects
+- Dramatic lighting and shadows
+- Professional studio-quality rendering
+- Unreal Engine 5 quality, 8k resolution
+- Seamless continuation of the previous battle moment`,
           image_url: options.sourceImageUrl,
-          mask_url: maskUrl,
+          strength: 0.7, // Slightly higher than first round to allow for more movement
+          num_inference_steps: 40,
+          guidance_scale: 12,
           num_images: options.numImages ?? 1,
-          safety_tolerance: "5",
           output_format: "png",
         },
+        logs: true,
+        onQueueUpdate: (update) => {
+          if (update.status === "IN_PROGRESS") {
+            logger?.info({
+              msg: "Generating battle round image",
+              status: update.status,
+              logs: update.logs.map((log) => log.message),
+            });
+          }
+        },
       });
+
+      if (!result.data.images?.length) {
+        throw new Error("No images generated");
+      }
 
       return result.data.images.map(
         (image: { url: string }, index: number) => ({
@@ -277,10 +277,20 @@ export const createMediaGenClient = (credentials: MediaGenCredentials) => {
         })
       );
     } catch (error) {
-      logger?.error("Failed to generate image from image:", error);
+      logger?.error({
+        msg: "Failed to generate round image",
+        error,
+        sourceImageUrl: options.sourceImageUrl,
+        prompt: options.prompt,
+        errorDetails:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+              }
+            : undefined,
+      });
       throw error;
-    } finally {
-      await fs.unlink(maskPath).catch(() => {});
     }
   };
 
@@ -294,15 +304,16 @@ export const createMediaGenClient = (credentials: MediaGenCredentials) => {
 
 async function downloadAndResizeImage(
   url: string,
-  outputPath: string
+  outputPath: string,
+  size: number = 768
 ): Promise<void> {
   const response = await fetch(url);
   const buffer = Buffer.from(await response.arrayBuffer());
 
   await sharp(buffer)
-    .resize(512, 512, {
+    .resize(size, size, {
       fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 1 },
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
     .png()
     .toFile(outputPath);

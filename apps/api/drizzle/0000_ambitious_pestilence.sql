@@ -116,6 +116,7 @@ CREATE TABLE "robots" (
 	"id" varchar(255) PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"description" text NOT NULL,
+	"visual_description" text NOT NULL,
 	"prompt" text NOT NULL,
 	"image_url" text,
 	"created_by" varchar(255) NOT NULL,

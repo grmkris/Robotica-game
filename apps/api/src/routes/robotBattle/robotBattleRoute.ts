@@ -29,6 +29,7 @@ const mediaGen = createMediaGenClient({ falApiKey: env.FAL_API_KEY });
 const RobotGenerationSchema = z.object({
   name: z.string(),
   description: z.string(),
+  visualDescription: z.string(),
   capabilities: z.array(z.string()),
   weaknesses: z.array(z.string()),
 });
@@ -92,24 +93,29 @@ export const createRobotRoute = new OpenAPIHono<{
     try {
       logger.info("Creating robot with prompt:", prompt);
 
-      // Generate robot characteristics first
       const robotData = await generateRobotData(prompt, logger);
       let imageUrl: string;
 
       try {
-        imageUrl = await generateRobotImage(robotData, logger);
+        imageUrl = await generateRobotImage(
+          {
+            name: robotData.name,
+            description: robotData.visualDescription,
+          },
+          logger
+        );
       } catch (imageError) {
         logger.error("Failed to generate robot image:", imageError);
-        imageUrl = `https://robohash.org/${robotData.name}`; // Use robohash as fallback
+        imageUrl = `https://robohash.org/${robotData.name}`;
       }
 
-      const robotId = generateId("robot");
       const [robot] = await db
         .insert(RobotTable)
         .values({
-          id: robotId,
+          id: generateId("robot"),
           name: robotData.name,
           description: robotData.description,
+          visualDescription: robotData.visualDescription,
           prompt,
           imageUrl,
           createdBy: user.id,
@@ -146,7 +152,11 @@ async function generateRobotData(prompt: string, logger: Logger) {
         stepName: "robot_generation",
         input: prompt,
         system: `You are a robot designer. Create a unique and creative robot based on the user's prompt.
-                Focus on describing its unique characteristics, abilities, strengths, and potential weaknesses.`,
+                Provide two distinct descriptions:
+                1. A battle-focused description detailing its combat capabilities, strengths, and weaknesses
+                2. A visual description focusing on its physical appearance, materials, colors, and design elements
+                
+                Make the visual description detailed enough for image generation while keeping the battle description focused on combat abilities.`,
         logger,
         providerConfig: {
           apikey: env.GOOGLE_GEMINI_API_KEY,
@@ -157,7 +167,8 @@ async function generateRobotData(prompt: string, logger: Logger) {
         stepId: "robot_generation",
         output: {
           outputSchema: RobotGenerationSchema,
-          schemaDescription: "The generated robot design",
+          schemaDescription:
+            "The generated robot design with separate battle and visual descriptions",
           schemaName: "RobotGeneration",
           temperature: 0.8,
         },

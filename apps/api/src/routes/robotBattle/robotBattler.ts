@@ -61,7 +61,7 @@ const BattleRoundSchema = z.object({
 
 type RobotState = z.infer<typeof RobotStateSchema>;
 
-const MAX_ROUNDS = 10; // Prevent infinite battles
+const MAX_ROUNDS = 3; // Prevent infinite battles
 
 // Add a default robot image URL
 const DEFAULT_ROBOT_IMAGE = "https://your-default-robot-image.png";
@@ -416,32 +416,21 @@ const processRound = async (props: {
         // Generate image based on round number
         let roundImageUrl: string | undefined;
         try {
-          // Base prompt similar to robot creation
-          const baseStyle =
-            "Video game style, detailed mechanical parts, professional lighting, high quality render, 8k resolution, unreal engine style";
+          const baseStyle = "high quality render, unreal engine style";
 
-          // Include original robot descriptions
-          const robot1Description = battleRobots[0].robot.description;
-          const robot2Description = battleRobots[1].robot.description;
-          const robotDescriptions = `First robot: ${robot1Description}. Second robot: ${robot2Description}.`;
-
-          // First round needs a more specific prompt to transform the side-by-side robots into a battle scene
-          const imagePrompt =
-            roundNumber === 1
-              ? `Epic robot battle scene between two robots: ${robotDescriptions} The robots are facing each other in combat stance. The image you are given is a joined image of the two robots, transform it into a battle scene. ${roundResult.narrative}. ${baseStyle}`
-              : `Epic robot battle scene continuing from the previous image: ${robotDescriptions}. ${roundResult.narrative}. Cinematic lighting, dramatic angle, ${baseStyle}`;
-
-          logger.info("Generating round image with prompt:", imagePrompt);
+          // Use visual descriptions for better image generation
+          const robot1 = battleRobots[0].robot;
+          const robot2 = battleRobots[1].robot;
 
           if (roundNumber === 1) {
             const result = await mediaGen.generateImageToImage(
               storage,
               {
-                robot1Url:
-                  battleRobots[0].robot.imageUrl ?? DEFAULT_ROBOT_IMAGE,
-                robot2Url:
-                  battleRobots[1].robot.imageUrl ?? DEFAULT_ROBOT_IMAGE,
-                prompt: imagePrompt,
+                robot1Url: robot1.imageUrl ?? DEFAULT_ROBOT_IMAGE,
+                robot2Url: robot2.imageUrl ?? DEFAULT_ROBOT_IMAGE,
+                robot1Description: robot1.visualDescription, // Use visual description
+                robot2Description: robot2.visualDescription, // Use visual description
+                prompt: `Epic battle scene between ${robot1.name} and ${robot2.name}. ${baseStyle}`,
                 imageSize: "square_hd",
                 initImageStrength: 0.8,
               },
@@ -449,9 +438,13 @@ const processRound = async (props: {
             );
             roundImageUrl = result[0]?.imageUrl;
           } else if (previousRoundImage) {
-            // Subsequent rounds: Use previous round's image
+            // For subsequent rounds, incorporate visual descriptions into the prompt
+            const imagePrompt = `${roundResult.narrative}. 
+              Robot 1 (${robot1.name}): ${robot1.visualDescription}
+              Robot 2 (${robot2.name}): ${robot2.visualDescription}
+              ${baseStyle}`;
+
             const result = await mediaGen.generateImageFromImage(
-              storage,
               {
                 sourceImageUrl: previousRoundImage,
                 prompt: imagePrompt,
