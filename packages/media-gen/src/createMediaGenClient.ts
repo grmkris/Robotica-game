@@ -57,6 +57,12 @@ export interface ImageToImageOptions extends CatImageGenerationOptions {
 export interface ImageFromImageOptions extends CatImageGenerationOptions {
   sourceImageUrl: string;
   initImageStrength?: number;
+  robot1OriginalImage?: string;
+  robot2OriginalImage?: string;
+  robot1VisualDescription?: string;
+  robot2VisualDescription?: string;
+  robot1Name?: string;
+  robot2Name?: string;
 }
 
 export const createMediaGenClient = (credentials: MediaGenCredentials) => {
@@ -229,28 +235,37 @@ The robots should look exactly like their original designs but positioned in an 
     logger?: Logger
   ): Promise<GeneratedImage[]> => {
     try {
-      // Use the same model as the first round for consistency
+      // Enhanced prompt that incorporates original robot details
       const result = await fal.subscribe("fal-ai/flux-lora/image-to-image", {
         input: {
-          prompt: `Continue the epic robot battle scene.
+          prompt: `Continue the epic robot battle scene. Maintain perfect consistency with the original robot designs.
+
 ${options.prompt}
 
-Important details to preserve:
-- Maintain the exact appearance and design of both robots
-- Keep all unique features, weapons, and armor details intact
-- Preserve the specific colors and materials of each robot
-- Maintain the scale and proportions of both robots
+Robot Specifications:
+${options.robot1Name || "First Robot"}: ${options.robot1VisualDescription}
+${options.robot2Name || "Second Robot"}: ${options.robot2VisualDescription}
 
-Scene composition:
+Critical Details to Preserve:
+- Maintain EXACT appearance from the original robot designs
+- Keep all unique features, weapons, and armor details unchanged
+- Preserve the specific head designs, eye colors, and distinctive elements
+- Match the original materials, textures, and color schemes precisely
+- Maintain the exact scale and proportions of both robots
+
+Scene Requirements:
 - Dynamic battle environment with energy effects
-- Dramatic lighting and shadows
-- Professional studio-quality rendering
-- Unreal Engine 5 quality, 8k resolution
-- Seamless continuation of the previous battle moment`,
+- Dramatic lighting that highlights each robot's unique features
+- Professional studio-quality rendering, 8k resolution
+- Unreal Engine 5 quality
+- Natural battle progression from the previous scene
+- Keep robots recognizable and consistent with their original designs
+
+The robots must maintain their exact original appearances while showing the battle action.`,
           image_url: options.sourceImageUrl,
-          strength: 0.7, // Slightly higher than first round to allow for more movement
-          num_inference_steps: 40,
-          guidance_scale: 12,
+          strength: 0.65, // Reduced strength to preserve more details
+          num_inference_steps: 50, // Increased steps for better detail preservation
+          guidance_scale: 15, // Increased for better prompt adherence
           num_images: options.numImages ?? 1,
           output_format: "png",
         },

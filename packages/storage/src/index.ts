@@ -225,16 +225,42 @@ export const createStorageClient = (credentials: StorageCredentials) => {
 
 export type CatStorageClient = ReturnType<typeof createStorageClient>;
 
-// Create and export the default storage instance
-export const storage = createStorageClient({
-  endPoint: process.env.ENDPOINT!,
-  accessKey: process.env.ACCESS_KEY!,
-  secretKey: process.env.SECRET_KEY!,
-  bucket: process.env.BUCKET!,
-});
+// Remove the automatic initialization at the bottom of the file and export a function instead
+export const createDefaultStorage = () => {
+  if (!process.env.ENDPOINT) throw new Error("Storage ENDPOINT not configured");
+  if (!process.env.ACCESS_KEY)
+    throw new Error("Storage ACCESS_KEY not configured");
+  if (!process.env.SECRET_KEY)
+    throw new Error("Storage SECRET_KEY not configured");
+  if (!process.env.BUCKET) throw new Error("Storage BUCKET not configured");
 
-// Initialize the storage on import
-storage.initialize().catch((error) => {
-  console.error("Failed to initialize storage:", error);
-  throw error;
-});
+  const storage = createStorageClient({
+    endPoint: process.env.ENDPOINT,
+    accessKey: process.env.ACCESS_KEY,
+    secretKey: process.env.SECRET_KEY,
+    bucket: process.env.BUCKET,
+  });
+
+  return storage;
+};
+
+// Export a lazy-initialized storage instance
+let defaultStorage: ReturnType<typeof createStorageClient> | undefined;
+
+export const storage = {
+  get instance() {
+    if (!defaultStorage) {
+      defaultStorage = createDefaultStorage();
+    }
+    return defaultStorage;
+  },
+
+  async initialize() {
+    try {
+      await this.instance.initialize();
+    } catch (error) {
+      console.error("Failed to initialize storage:", error);
+      throw error;
+    }
+  },
+};

@@ -424,12 +424,12 @@ const processRound = async (props: {
 
           if (roundNumber === 1) {
             const result = await mediaGen.generateImageToImage(
-              storage,
+              storage.instance,
               {
                 robot1Url: robot1.imageUrl ?? DEFAULT_ROBOT_IMAGE,
                 robot2Url: robot2.imageUrl ?? DEFAULT_ROBOT_IMAGE,
-                robot1Description: robot1.visualDescription, // Use visual description
-                robot2Description: robot2.visualDescription, // Use visual description
+                robot1Description: robot1.visualDescription,
+                robot2Description: robot2.visualDescription,
                 prompt: `Epic battle scene between ${robot1.name} and ${robot2.name}. ${baseStyle}`,
                 imageSize: "square_hd",
                 initImageStrength: 0.8,
@@ -453,6 +453,12 @@ const processRound = async (props: {
                   0.7 + (roundNumber - 1) * 0.05,
                   0.9
                 ),
+                robot1OriginalImage: robot1.imageUrl ?? undefined,
+                robot2OriginalImage: robot2.imageUrl ?? undefined,
+                robot1VisualDescription: robot1.visualDescription,
+                robot2VisualDescription: robot2.visualDescription,
+                robot1Name: robot1.name,
+                robot2Name: robot2.name,
               },
               logger
             );
